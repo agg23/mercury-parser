@@ -13,7 +13,13 @@
     "noImplicitAny": true,
     "baseUrl": "./",
     "paths": {
-      "*": ["types/*", "*"]
+      "*": ["types/*", "*"],
+      "test-helpers": ["src/test-helpers"],
+      "utils/*": ["src/utils/*"],
+      "cleaners/*": ["src/cleaners/*"],
+      "resource/*": ["src/resource/*"],
+      "extractors/*": ["src/extractors/*"],
+      "mercury": ["src/mercury"]
     },
     "outDir": "dist",
     "declaration": true,
