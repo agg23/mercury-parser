@@ -23,6 +23,10 @@ export declare const GenericExtractor: {
         title: string;
         url: string;
     }, opts?: import("./content/types").ExtractorOptions | undefined) => string | undefined;
+    comment: ({ $, html }: {
+        $: cheerio.Root;
+        html: string;
+    }, opts?: import("./content/types").ExtractorOptions | undefined) => import("../types").Comment[] | undefined;
     lead_image_url: ({ $, content, metaCache, html, }: {
         $: cheerio.Root;
         content: string;

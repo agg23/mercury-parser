@@ -50179,7 +50179,7 @@ const HEADER_TAG_LIST = HEADER_TAGS.join(',');
 // extracting content from a resource. These strings are joined together
 // and then tested for existence using re:test, so may contain simple,
 // non-pipe style regular expression queries if necessary.
-const UNLIKELY_CANDIDATES_BLACKLIST = [
+const UNLIKELY_CONTENT_CANDIDATES_BLACKLIST = [
     'ad-break',
     'adbox',
     'advert',
@@ -50232,7 +50232,7 @@ const UNLIKELY_CANDIDATES_BLACKLIST = [
 // These strings are joined together and then tested for existence using
 // re:test, so may contain simple, non-pipe style regular expression queries
 // if necessary.
-const UNLIKELY_CANDIDATES_WHITELIST = [
+const UNLIKELY_CONTENT_CANDIDATES_WHITELIST = [
     'and',
     'article',
     'body',
@@ -50262,11 +50262,41 @@ const DIV_TO_P_BLOCK_TAGS = [
     'pre',
     'table',
 ].join(',');
+// A list of tags that should be ignored when trying to find the top candidate
+// for a document.
+const NON_TOP_CANDIDATE_TAGS = [
+    'br',
+    'b',
+    'i',
+    'label',
+    'hr',
+    'area',
+    'base',
+    'basefont',
+    'input',
+    'img',
+    'link',
+    'meta',
+];
+const NON_TOP_CANDIDATE_TAGS_RE = new RegExp(`^(${NON_TOP_CANDIDATE_TAGS.join('|')})$`, 'i');
+// A list of selectors that specify, very clearly, either hNews or other
+// very content-specific style content, like Blogger templates.
+// More examples here: http://microformats.org/wiki/blog-post-formats
+const HNEWS_CONTENT_SELECTORS = [
+    ['.hentry', '.entry-content'],
+    ['entry', '.entry-content'],
+    ['.entry', '.entry_content'],
+    ['.post', '.postbody'],
+    ['.post', '.post_body'],
+    ['.post', '.post-body'],
+];
+const PHOTO_HINTS = ['figure', 'photo', 'image', 'caption'];
+const PHOTO_HINTS_RE = new RegExp(PHOTO_HINTS.join('|'), 'i');
 // A list of strings that denote a positive scoring for this content as being
 // an article container. Checked against className and id.
 //
 // TODO: Perhaps have these scale based on their odds of being quality?
-const POSITIVE_SCORE_HINTS$1 = [
+const POSITIVE_SCORE_HINTS = [
     'article',
     'articlecontent',
     'instapaper_body',
@@ -50288,12 +50318,14 @@ const POSITIVE_SCORE_HINTS$1 = [
     '\\Bcopy',
 ];
 // The above list, joined into a matching regular expression
-const POSITIVE_SCORE_RE$1 = new RegExp(POSITIVE_SCORE_HINTS$1.join('|'), 'i');
+const POSITIVE_SCORE_RE = new RegExp(POSITIVE_SCORE_HINTS.join('|'), 'i');
+// Readability publisher-specific guidelines
+const READABILITY_ASSET = new RegExp('entry-content-asset', 'i');
 // A list of strings that denote a negative scoring for this content as being
 // an article container. Checked against className and id.
 //
 // TODO: Perhaps have these scale based on their odds of being quality?
-const NEGATIVE_SCORE_HINTS$1 = [
+const NEGATIVE_SCORE_HINTS = [
     'adbox',
     'advert',
     'author',
@@ -50351,7 +50383,7 @@ const NEGATIVE_SCORE_HINTS$1 = [
     'widget',
 ];
 // The above list, joined into a matching regular expression
-const NEGATIVE_SCORE_RE$1 = new RegExp(NEGATIVE_SCORE_HINTS$1.join('|'), 'i');
+const NEGATIVE_SCORE_RE = new RegExp(NEGATIVE_SCORE_HINTS.join('|'), 'i');
 // XPath to try to determine if a page is wordpress. Not always successful.
 const IS_WP_SELECTOR = 'meta[name=generator][value^=WordPress]';
 // Match any phrase that looks like it could be page, or paging, or pagination
@@ -50412,10 +50444,13 @@ const BLOCK_LEVEL_TAGS_RE = new RegExp(`^(${BLOCK_LEVEL_TAGS.join('|')})$`, 'i')
 // blacklisted elements that aren't whitelisted. We do this all in one
 // expression-both because it's only one pass, and because this skips the
 // serialization for whitelisted nodes.
-const candidatesBlacklist = UNLIKELY_CANDIDATES_BLACKLIST.join('|');
-const CANDIDATES_BLACKLIST = new RegExp(candidatesBlacklist, 'i');
-const candidatesWhitelist = UNLIKELY_CANDIDATES_WHITELIST.join('|');
-const CANDIDATES_WHITELIST = new RegExp(candidatesWhitelist, 'i');
+const candidatesBlacklist = UNLIKELY_CONTENT_CANDIDATES_BLACKLIST.join('|');
+const CONTENT_CANDIDATES_BLACKLIST = new RegExp(candidatesBlacklist, 'i');
+const candidatesWhitelist = UNLIKELY_CONTENT_CANDIDATES_WHITELIST.join('|');
+const CONTENT_CANDIDATES_WHITELIST = new RegExp(candidatesWhitelist, 'i');
+const PARAGRAPH_SCORE_TAGS = new RegExp('^(p|li|span|pre)$', 'i');
+const CHILD_CONTENT_TAGS = new RegExp('^(td|blockquote|ol|ul|dl)$', 'i');
+const BAD_TAGS = new RegExp('^(address|form)$', 'i');
 
 function stripUnlikelyCandidates($) {
     //  Loop through the provided document and remove any non-link nodes
@@ -50436,10 +50471,10 @@ function stripUnlikelyCandidates($) {
         if (!id && !classes)
             return;
         const classAndId = `${classes || ''} ${id || ''}`;
-        if (CANDIDATES_WHITELIST.test(classAndId)) {
+        if (CONTENT_CANDIDATES_WHITELIST.test(classAndId)) {
             return;
         }
-        if (CANDIDATES_BLACKLIST.test(classAndId)) {
+        if (CONTENT_CANDIDATES_BLACKLIST.test(classAndId)) {
             $node.remove();
         }
     });
@@ -50717,133 +50752,6 @@ function getScore($node) {
     var _a;
     return parseFloat((_a = $node.attr('score')) !== null && _a !== void 0 ? _a : '0') || undefined;
 }
-
-// // CONTENT FETCHING CONSTANTS ////
-// A list of tags that should be ignored when trying to find the top candidate
-// for a document.
-const NON_TOP_CANDIDATE_TAGS = [
-    'br',
-    'b',
-    'i',
-    'label',
-    'hr',
-    'area',
-    'base',
-    'basefont',
-    'input',
-    'img',
-    'link',
-    'meta',
-];
-const NON_TOP_CANDIDATE_TAGS_RE = new RegExp(`^(${NON_TOP_CANDIDATE_TAGS.join('|')})$`, 'i');
-// A list of selectors that specify, very clearly, either hNews or other
-// very content-specific style content, like Blogger templates.
-// More examples here: http://microformats.org/wiki/blog-post-formats
-const HNEWS_CONTENT_SELECTORS = [
-    ['.hentry', '.entry-content'],
-    ['entry', '.entry-content'],
-    ['.entry', '.entry_content'],
-    ['.post', '.postbody'],
-    ['.post', '.post_body'],
-    ['.post', '.post-body'],
-];
-const PHOTO_HINTS = ['figure', 'photo', 'image', 'caption'];
-const PHOTO_HINTS_RE = new RegExp(PHOTO_HINTS.join('|'), 'i');
-// A list of strings that denote a positive scoring for this content as being
-// an article container. Checked against className and id.
-//
-// TODO: Perhaps have these scale based on their odds of being quality?
-const POSITIVE_SCORE_HINTS = [
-    'article',
-    'articlecontent',
-    'instapaper_body',
-    'blog',
-    'body',
-    'content',
-    'entry-content-asset',
-    'entry',
-    'hentry',
-    'main',
-    'Normal',
-    'page',
-    'pagination',
-    'permalink',
-    'post',
-    'story',
-    'text',
-    '[-_]copy',
-    '\\Bcopy',
-];
-// The above list, joined into a matching regular expression
-const POSITIVE_SCORE_RE = new RegExp(POSITIVE_SCORE_HINTS.join('|'), 'i');
-// Readability publisher-specific guidelines
-const READABILITY_ASSET = new RegExp('entry-content-asset', 'i');
-// A list of strings that denote a negative scoring for this content as being
-// an article container. Checked against className and id.
-//
-// TODO: Perhaps have these scale based on their odds of being quality?
-const NEGATIVE_SCORE_HINTS = [
-    'adbox',
-    'advert',
-    'author',
-    'bio',
-    'bookmark',
-    'bottom',
-    'byline',
-    'clear',
-    'com-',
-    'combx',
-    'comment',
-    'comment\\B',
-    'contact',
-    'copy',
-    'credit',
-    'crumb',
-    'date',
-    'deck',
-    'excerpt',
-    'featured',
-    'foot',
-    'footer',
-    'footnote',
-    'graf',
-    'head',
-    'info',
-    'infotext',
-    'instapaper_ignore',
-    'jump',
-    'linebreak',
-    'link',
-    'masthead',
-    'media',
-    'meta',
-    'modal',
-    'outbrain',
-    'promo',
-    'pr_',
-    'related',
-    'respond',
-    'roundcontent',
-    'scroll',
-    'secondary',
-    'share',
-    'shopping',
-    'shoutbox',
-    'side',
-    'sidebar',
-    'sponsor',
-    'stamp',
-    'sub',
-    'summary',
-    'tags',
-    'tools',
-    'widget',
-];
-// The above list, joined into a matching regular expression
-const NEGATIVE_SCORE_RE = new RegExp(NEGATIVE_SCORE_HINTS.join('|'), 'i');
-const PARAGRAPH_SCORE_TAGS = new RegExp('^(p|li|span|pre)$', 'i');
-const CHILD_CONTENT_TAGS = new RegExp('^(td|blockquote|ol|ul|dl)$', 'i');
-const BAD_TAGS = new RegExp('^(address|form)$', 'i');
 
 // Get the score of a node based on its className and id.
 function getWeight(node) {
@@ -51313,7 +51221,7 @@ const IS_LINK = new RegExp('https?://', 'i');
 const IMAGE_RE = '.(png|gif|jpe?g)';
 const IS_IMAGE = new RegExp(`${IMAGE_RE}`, 'i');
 const IS_SRCSET = new RegExp(`${IMAGE_RE}(\\?\\S+)?(\\s*[\\d.]+[wx])`, 'i');
-const TAGS_TO_REMOVE = ['script', 'style', 'form'].join(',');
+const TAGS_TO_REMOVE = ['script', 'style'].join(',');
 
 // Convert all instances of images with potentially
 // lazy loaded images into normal images.
@@ -82617,9 +82525,9 @@ function scoreByParents($link) {
         // we don't have something like 'content' as well, that's
         // a bad sign. Give a penalty.
         if (!negativeMatch &&
-            NEGATIVE_SCORE_RE$1.test(parentData) &&
+            NEGATIVE_SCORE_RE.test(parentData) &&
             EXTRANEOUS_LINK_HINTS_RE.test(parentData)) {
-            if (!POSITIVE_SCORE_RE$1.test(parentData)) {
+            if (!POSITIVE_SCORE_RE.test(parentData)) {
                 negativeMatch = true;
                 score -= 25;
             }
@@ -82920,6 +82828,91 @@ const GenericWordCountExtractor = {
     },
 };
 
+const extractBestNodes = ($, opts) => {
+    if (opts.stripUnlikelyCandidates) ;
+    // $ = convertToParagraphs($);
+    // findComments($);
+    // Reddit comments
+    const getComment = (_index, node) => {
+        const author = $('.author', node).first().text();
+        const score = $('.score.unvoted', node).first().text();
+        const text = $('.usertext-body', node).first().text();
+        return {
+            author,
+            score,
+            text: normalizeSpaces(text),
+            children: $('> .child > div > .comment', node).map(getComment).get(),
+        };
+    };
+    try {
+        const comments = $('.commentarea > div > .comment').map(getComment).get();
+        return comments.length > 0 ? comments : undefined;
+    }
+    catch (_a) {
+        return undefined;
+    }
+};
+
+const GenericCommentExtractor = {
+    defaultOpts: {
+        stripUnlikelyCandidates: true,
+        weightNodes: true,
+    },
+    // Extract the content for this resource - initially, pass in our
+    // most restrictive opts which will return the highest quality
+    // content. On each failure, retry with slightly more lax opts.
+    //
+    // :param return_type: string. If "node", should return the content
+    // as a cheerio node rather than as an HTML string.
+    extract({ $, html }, opts) {
+        const options = Object.assign(Object.assign({}, this.defaultOpts), opts);
+        $ = cheerio.load(html);
+        // Cascade through our extraction-specific opts in an ordered fashion,
+        // turning them off as we try to extract content.
+        return extractBestNodes($, options);
+        // const node = this.getContentNode($, title, url, options);
+        // if (nodeIsSufficient(node)) {
+        //   return this.cleanAndReturnNode(node, $);
+        // }
+        // // We didn't succeed on first pass, one by one disable our
+        // // extraction opts and try again.
+        // // eslint-disable-next-line no-restricted-syntax
+        // for (const key of Reflect.ownKeys(options).filter(
+        //   k => options[k as keyof ExtractorOptions] === true
+        // )) {
+        //   options[key as keyof ExtractorOptions] = false;
+        //   $ = cheerio.load(html);
+        //   node = this.getContentNode($, title, url, options);
+        //   if (nodeIsSufficient(node)) {
+        //     break;
+        //   }
+        // }
+        // return this.cleanAndReturnNode(node, $);
+    },
+    // Get node given current options
+    // getContentNode(
+    //   $: cheerio.Root,
+    //   title: string,
+    //   url: string,
+    //   opts: ExtractorOptions
+    // ) {
+    //   return cleanContent(extractBestNodes($, opts), {
+    //     $,
+    //     title,
+    //     url,
+    //   });
+    // },
+    // // Once we got here, either we're at our last-resort node, or
+    // // we broke early. Make sure we at least have -something- before we
+    // // move forward.
+    // cleanAndReturnNode(node: cheerio.Cheerio, $: cheerio.Root) {
+    //   if (!node) {
+    //     return undefined;
+    //   }
+    //   return normalizeSpaces($.html(node));
+    // },
+};
+
 const GenericExtractor = {
     // This extractor is the default for all domains
     domain: '*',
@@ -82927,6 +82920,7 @@ const GenericExtractor = {
     date_published: GenericDatePublishedExtractor.extract,
     author: GenericAuthorExtractor.extract,
     content: GenericContentExtractor.extract.bind(GenericContentExtractor),
+    comment: GenericCommentExtractor.extract.bind(GenericCommentExtractor),
     lead_image_url: GenericLeadImageUrlExtractor.extract,
     dek: GenericDekExtractor.extract,
     next_page_url: GenericNextPageUrlExtractor.extract,
@@ -83185,6 +83179,7 @@ const RootExtractor = {
         const author = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'author' }));
         const next_page_url = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'next_page_url' }));
         const content = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'content', extractHtml: true, title }));
+        const comments = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'comment', extractHtml: true }));
         const lead_image_url = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'lead_image_url', content }));
         const excerpt = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'excerpt', content }));
         const dek = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'dek', content,
@@ -83198,6 +83193,7 @@ const RootExtractor = {
         }
         return Object.assign({ type: 'full', title,
             content,
+            comments,
             author,
             date_published,
             lead_image_url,

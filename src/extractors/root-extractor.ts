@@ -6,7 +6,6 @@ import {
   DefaultContentType,
   Extend,
   ExtractorOptions,
-  ExtractorResult,
   InnerExtractorOptions,
   ExtractResultOptions,
   Selector,
@@ -322,6 +321,11 @@ export const RootExtractor = {
       extractHtml: true,
       title,
     });
+    const comments = extractResult<'comment'>({
+      ...selectionOptions,
+      type: 'comment',
+      extractHtml: true,
+    });
     const lead_image_url = extractResult<'lead_image_url'>({
       ...selectionOptions,
       type: 'lead_image_url',
@@ -362,6 +366,7 @@ export const RootExtractor = {
       type: 'full',
       title,
       content,
+      comments,
       author,
       date_published,
       lead_image_url,

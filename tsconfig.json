@@ -11,7 +11,7 @@
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
     "noImplicitAny": true,
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
       "*": ["types/*", "*"]
     },
@@ -19,6 +19,6 @@
     "declaration": true,
     "declarationDir": "types"
   },
-  "include": ["src", "fixtures", "scripts", "cli.js"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

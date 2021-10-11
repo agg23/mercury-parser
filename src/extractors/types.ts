@@ -17,6 +17,7 @@ export interface InnerExtractorOptions {
 
 export type DefaultContentType =
   | 'content'
+  | 'comment'
   | 'title'
   | 'date_published'
   | 'author'
@@ -83,11 +84,19 @@ export interface Extend {
   [Key: string]: InnerExtractorOptions;
 }
 
+export interface Comment {
+  author?: string;
+  score?: string;
+  text: string;
+  children?: Comment[];
+}
+
 export interface ExtractorResult {
   next_page_url?: string;
 
   title: string;
   content?: string;
+  comments?: Comment[];
   author?: string;
   date_published?: string;
   // This doesn't need to be in this type

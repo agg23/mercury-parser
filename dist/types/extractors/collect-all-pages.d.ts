@@ -11,6 +11,7 @@ export declare function collectAllPages({ next_page_url, html, $: $incoming, met
     next_page_url?: string | undefined;
     title: string;
     content?: string | undefined;
+    comments?: import("./types").Comment[] | undefined;
     author?: string | undefined;
     date_published?: string | undefined;
     dek?: undefined;

@@ -1,8 +1,9 @@
 import {
-  PARAGRAPH_SCORE_TAGS,
-  CHILD_CONTENT_TAGS,
   BAD_TAGS,
-} from './constants';
+  CHILD_CONTENT_TAGS,
+  PARAGRAPH_SCORE_TAGS,
+} from 'utils/dom/constants';
+
 import { scoreParagraph } from './score-paragraph';
 
 // Score an individual node. Has some smarts for paragraphs, otherwise

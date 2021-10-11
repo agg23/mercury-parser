@@ -1,8 +1,8 @@
+import { NON_TOP_CANDIDATE_TAGS_RE } from 'utils/dom/constants';
 import { textLength, linkDensity } from '../../../../utils/dom';
 import { hasSentenceEnd } from '../../../../utils/text';
 import { isTagElement } from '../../../../utils/types';
 
-import { NON_TOP_CANDIDATE_TAGS_RE } from './constants';
 import { getScore } from './get-score';
 
 // Now that we have a top_candidate, look through the siblings of

@@ -10,7 +10,7 @@ export interface InnerExtractorOptions {
     allowMultiple?: boolean;
     clean?: string[];
 }
-export declare type DefaultContentType = 'content' | 'title' | 'date_published' | 'author' | 'next_page_url' | 'lead_image_url' | 'excerpt' | 'dek' | 'word_count' | 'direction' | 'url_and_domain';
+export declare type DefaultContentType = 'content' | 'comment' | 'title' | 'date_published' | 'author' | 'next_page_url' | 'lead_image_url' | 'excerpt' | 'dek' | 'word_count' | 'direction' | 'url_and_domain';
 export declare type CustomExtractor = {
     [Key in DefaultContentType]: InnerExtractorOptions;
 } & {
@@ -52,10 +52,17 @@ export declare type Selector = string | [string, string] | [string, string, (ite
 export interface Extend {
     [Key: string]: InnerExtractorOptions;
 }
+export interface Comment {
+    author?: string;
+    score?: string;
+    text: string;
+    children?: Comment[];
+}
 export interface ExtractorResult {
     next_page_url?: string;
     title: string;
     content?: string;
+    comments?: Comment[];
     author?: string;
     date_published?: string;
     dek?: undefined;

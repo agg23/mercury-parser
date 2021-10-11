@@ -8,10 +8,11 @@ import inquirer from 'inquirer';
 import ora from 'ora';
 import { exec } from 'child_process';
 
-import { stripJunkTags, makeLinksAbsolute } from 'utils/dom';
 import { parse, fetchResource } from '../dist/mercury';
 import extractorTemplate from './templates/custom-extractor';
 import extractorTestTemplate from './templates/custom-extractor-test';
+import { stripJunkTags } from '../src/utils/dom/strip-junk-tags';
+import { makeLinksAbsolute } from '../src/utils/dom/make-links-absolute';
 
 const questions = [
   {
@@ -19,7 +20,7 @@ const questions = [
     name: 'website',
     message:
       "Paste a url to an article you'd like to create or extend a parser for:",
-    validate(value) {
+    validate(value: string) {
       const { hostname } = URL.parse(value);
       if (hostname) return true;
 
@@ -27,9 +28,9 @@ const questions = [
     },
   },
 ];
-let spinner;
+let spinner: ora.Ora;
 
-function confirm(fn, args, msg, newParser) {
+function confirm(fn, args, msg, newParser?: boolean) {
   spinner = ora({ text: msg });
   spinner.start();
   const result = fn(...args);
@@ -102,6 +103,8 @@ function savePage($, [url], newParser) {
 
   const filename = new Date().getTime();
   const file = `./fixtures/${hostname}/${filename}.html`;
+
+  fs.writeFileSync(file + 'first', $.html());
   // fix http(s) relative links:
   makeLinksAbsolute($('*').first(), $, url);
   $('[src], [href]').each((index, node) => {

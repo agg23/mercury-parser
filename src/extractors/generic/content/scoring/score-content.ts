@@ -1,7 +1,7 @@
+import { HNEWS_CONTENT_SELECTORS } from 'utils/dom/constants';
 import { convertNodeTo } from '../../../../utils/dom/convert-node-to';
 import { addScore, getOrInitScore } from './add-score';
 
-import { HNEWS_CONTENT_SELECTORS } from './constants';
 import { scoreNode } from './score-node';
 import { setScore } from './set-score';
 

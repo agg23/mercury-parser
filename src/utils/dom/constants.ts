@@ -78,7 +78,7 @@ export const HEADER_TAG_LIST = HEADER_TAGS.join(',');
 // extracting content from a resource. These strings are joined together
 // and then tested for existence using re:test, so may contain simple,
 // non-pipe style regular expression queries if necessary.
-export const UNLIKELY_CANDIDATES_BLACKLIST = [
+export const UNLIKELY_CONTENT_CANDIDATES_BLACKLIST = [
   'ad-break',
   'adbox',
   'advert',
@@ -132,7 +132,7 @@ export const UNLIKELY_CANDIDATES_BLACKLIST = [
 // These strings are joined together and then tested for existence using
 // re:test, so may contain simple, non-pipe style regular expression queries
 // if necessary.
-export const UNLIKELY_CANDIDATES_WHITELIST = [
+export const UNLIKELY_CONTENT_CANDIDATES_WHITELIST = [
   'and',
   'article',
   'body',
@@ -148,6 +148,12 @@ export const UNLIKELY_CANDIDATES_WHITELIST = [
   'page',
   'posts',
   'shadow',
+];
+
+export const UNLIKELY_COMMENT_CANDIDATES_WHITELIST = [
+  'comment',
+  'discuss',
+  'disqus',
 ];
 
 // A list of tags which, if found inside, should cause a <div /> to NOT
@@ -415,11 +421,24 @@ export const BLOCK_LEVEL_TAGS_RE = new RegExp(
 // blacklisted elements that aren't whitelisted. We do this all in one
 // expression-both because it's only one pass, and because this skips the
 // serialization for whitelisted nodes.
-const candidatesBlacklist = UNLIKELY_CANDIDATES_BLACKLIST.join('|');
-export const CANDIDATES_BLACKLIST = new RegExp(candidatesBlacklist, 'i');
+const candidatesBlacklist = UNLIKELY_CONTENT_CANDIDATES_BLACKLIST.join('|');
+export const CONTENT_CANDIDATES_BLACKLIST = new RegExp(
+  candidatesBlacklist,
+  'i'
+);
 
-const candidatesWhitelist = UNLIKELY_CANDIDATES_WHITELIST.join('|');
-export const CANDIDATES_WHITELIST = new RegExp(candidatesWhitelist, 'i');
+const candidatesWhitelist = UNLIKELY_CONTENT_CANDIDATES_WHITELIST.join('|');
+export const CONTENT_CANDIDATES_WHITELIST = new RegExp(
+  candidatesWhitelist,
+  'i'
+);
+
+const commentCandidatesWhitelist =
+  UNLIKELY_COMMENT_CANDIDATES_WHITELIST.join('|');
+export const COMMENT_CANDIDATES_WHITELIST = new RegExp(
+  commentCandidatesWhitelist,
+  'i'
+);
 
 export const UNLIKELY_RE = new RegExp(
   `!(${candidatesWhitelist})|(${candidatesBlacklist})`,

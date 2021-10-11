@@ -1,4 +1,7 @@
-import { CANDIDATES_WHITELIST, CANDIDATES_BLACKLIST } from './constants';
+import {
+  CONTENT_CANDIDATES_WHITELIST,
+  CONTENT_CANDIDATES_BLACKLIST,
+} from './constants';
 
 export function stripUnlikelyCandidates($: cheerio.Root) {
   //  Loop through the provided document and remove any non-link nodes
@@ -19,10 +22,10 @@ export function stripUnlikelyCandidates($: cheerio.Root) {
       if (!id && !classes) return;
 
       const classAndId = `${classes || ''} ${id || ''}`;
-      if (CANDIDATES_WHITELIST.test(classAndId)) {
+      if (CONTENT_CANDIDATES_WHITELIST.test(classAndId)) {
         return;
       }
-      if (CANDIDATES_BLACKLIST.test(classAndId)) {
+      if (CONTENT_CANDIDATES_BLACKLIST.test(classAndId)) {
         $node.remove();
       }
     });

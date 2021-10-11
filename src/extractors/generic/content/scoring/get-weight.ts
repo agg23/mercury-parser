@@ -1,9 +1,9 @@
 import {
   NEGATIVE_SCORE_RE,
-  POSITIVE_SCORE_RE,
   PHOTO_HINTS_RE,
+  POSITIVE_SCORE_RE,
   READABILITY_ASSET,
-} from './constants';
+} from 'utils/dom/constants';
 
 // Get the score of a node based on its className and id.
 export function getWeight(node: cheerio.Cheerio) {

@@ -6,4 +6,4 @@ export const IS_SRCSET = new RegExp(
   'i'
 );
 
-export const TAGS_TO_REMOVE = ['script', 'style', 'form'].join(',');
+export const TAGS_TO_REMOVE = ['script', 'style'].join(',');

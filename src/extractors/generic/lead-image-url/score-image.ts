@@ -1,11 +1,10 @@
+import { PHOTO_HINTS_RE } from 'utils/dom/constants';
 import {
   POSITIVE_LEAD_IMAGE_URL_HINTS_RE,
   NEGATIVE_LEAD_IMAGE_URL_HINTS_RE,
   GIF_RE,
   JPG_RE,
 } from './constants';
-
-import { PHOTO_HINTS_RE } from '../content/scoring/constants';
 
 function getSig($node: cheerio.Cheerio) {
   return `${$node.attr('class') || ''} ${$node.attr('id') || ''}`;

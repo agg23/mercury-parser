@@ -27,7 +27,7 @@
   "main": "./dist/mercury.js",
   "typings": "./dist/types/mercury.d.ts",
   "bin": {
-    "mercury-parser": "./cli.js"
+    "mercury-parser": "./src/cli.js"
   },
   "scripts": {
     "babel": "babel",
@@ -39,7 +39,6 @@
     "build:web": "yarn lint && rollup -c rollup.config.web.js && yarn test:build:web",
     "build:web:ci": "rollup -c rollup.config.web.js && yarn test:build:web",
     "release": "yarn build && yarn build:web",
-    "build:generator": "rollup -c scripts/rollup.config.js",
     "test_build": "rollup -c",
     "test": "yarn test:node && yarn test:web",
     "test:node": "jest --json --outputFile test-output.json",
@@ -47,7 +46,7 @@
     "test:build": "jest ./scripts/check-build.test.js",
     "test:build:web": "node ./scripts/proxy-browser-test.js",
     "watch:test": "jest --watch",
-    "generate-parser": "node ./dist/generate-custom-parser.js"
+    "generate-parser": "ts-node ./scripts/generate-custom-parser.ts"
   },
   "engines": {
     "node": ">=10"
@@ -70,7 +69,9 @@
     "@types/caseless": "^0.12.2",
     "@types/cheerio": "^0.22.30",
     "@types/ellipsize": "^0.1.1",
+    "@types/inquirer": "^8.1.3",
     "@types/jquery": "^3.5.6",
+    "@types/node": "^16.10.3",
     "@types/tough-cookie": "^4.0.1",
     "@types/turndown": "^5.0.1",
     "@types/valid-url": "^1.0.3",
@@ -119,6 +120,7 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.7.0",
     "rollup-plugin-uglify": "^6.0.4",
+    "ts-node": "^10.2.1",
     "tslib": "^2.3.1",
     "typescript": "^4.4.3",
     "watchify": "^3.11.1"

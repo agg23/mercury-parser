@@ -12,6 +12,7 @@ import { GenericUrlExtractor } from './url/extractor';
 import { GenericExcerptExtractor } from './excerpt/extractor';
 import { GenericWordCountExtractor } from './word-count/extractor';
 import { ExtractorResult } from '../types';
+import { GenericCommentExtractor } from './comment/extractor';
 
 export const GenericExtractor = {
   // This extractor is the default for all domains
@@ -20,6 +21,7 @@ export const GenericExtractor = {
   date_published: GenericDatePublishedExtractor.extract,
   author: GenericAuthorExtractor.extract,
   content: GenericContentExtractor.extract.bind(GenericContentExtractor),
+  comment: GenericCommentExtractor.extract.bind(GenericCommentExtractor),
   lead_image_url: GenericLeadImageUrlExtractor.extract,
   dek: GenericDekExtractor.extract,
   next_page_url: GenericNextPageUrlExtractor.extract,

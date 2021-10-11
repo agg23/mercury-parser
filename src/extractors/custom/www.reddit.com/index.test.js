@@ -19,7 +19,7 @@ describe('WwwRedditComExtractor', () => {
       const html = fs.readFileSync(
         './fixtures/www.reddit.com/1551705199548.html'
       );
-      result = parse(url, { html, fallback: false });
+      result = parse(url, { html, fallback: true });
     });
 
     it('is selected properly', () => {
@@ -103,6 +103,28 @@ describe('WwwRedditComExtractor', () => {
       assert.equal(
         first13,
         'Edit: thank you for educating me about the ubiquity of vanilla. Still, none'
+      );
+    });
+
+    it('returns the contents of comments', async () => {
+      const html = fs.readFileSync(
+        './fixtures/www.reddit.com/1633882514577.html'
+      );
+
+      const uri =
+        'https://old.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
+
+      const { comments } = await parse(uri, { html });
+
+      assert.equal(comments.length, 17);
+
+      const firstComment = comments[0];
+
+      assert.equal(firstComment.author, 'LorenzoPg');
+      assert.equal(firstComment.score, '11.0k points');
+      assert.equal(
+        firstComment.text,
+        'Fun fact: Vanilla (the real stuff) has a similar price to silver.'
       );
     });
 

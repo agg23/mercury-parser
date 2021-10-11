@@ -1,5 +1,5 @@
+import { NON_TOP_CANDIDATE_TAGS_RE } from 'utils/dom/constants';
 import { isTagElement } from '../../../../utils/types';
-import { NON_TOP_CANDIDATE_TAGS_RE } from './constants';
 import { getScore } from './get-score';
 import { mergeSiblings } from './merge-siblings';
 
