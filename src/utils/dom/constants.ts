@@ -63,10 +63,24 @@ export const CLEAN_CONDITIONALLY_TAGS = [
   'ul',
   'ol',
   'table',
+  'tr',
   'div',
   'button',
   'form',
 ].join(',');
+
+// cleanWrappingTags
+// Remove root tags that wrap the entire content without adding any information
+export const CLEAN_WRAPPING_TAGS = [
+  'tr',
+  'td',
+  'blockquote',
+  'button',
+  'div',
+  'span',
+  'p',
+  'pre',
+];
 
 // cleanHeaders
 const HEADER_TAGS = ['h2', 'h3', 'h4', 'h5', 'h6'];

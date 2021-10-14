@@ -104,7 +104,6 @@ function savePage($, [url], newParser) {
   const filename = new Date().getTime();
   const file = `./fixtures/${hostname}/${filename}.html`;
 
-  fs.writeFileSync(file + 'first', $.html());
   // fix http(s) relative links:
   makeLinksAbsolute($('*').first(), $, url);
   $('[src], [href]').each((index, node) => {

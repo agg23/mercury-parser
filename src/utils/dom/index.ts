@@ -24,3 +24,4 @@ export { isWordpress } from './is-wordpress';
 export { getAttrs } from './get-attrs';
 export { setAttr } from './set-attr';
 export { setAttrs } from './set-attrs';
+export { cleanWrappingTags } from './clean-wrapping';

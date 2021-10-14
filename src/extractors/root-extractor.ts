@@ -16,14 +16,15 @@ import {
   SelectedExtractOptions,
   FullExtractorResult,
   ContentExtractorResult,
-  CommentInnerExtractorOptions,
+  CommentExtractorOptions,
+  ChildLevelCommentExtractorOptions,
 } from './types';
 
 // Remove elements by an array of selectors
 export function cleanBySelectors(
   $content: cheerio.Cheerio,
   $: cheerio.Root,
-  { clean }: { clean?: string[] }
+  { clean }: { clean?: string[] } = {}
 ) {
   if (!clean) {
     return $content;
@@ -45,7 +46,7 @@ export function transformElements(
       string,
       string | ((node: cheerio.Cheerio, $: cheerio.Root) => unknown)
     >;
-  }
+  } = {}
 ) {
   if (!transforms) {
     return $content;
@@ -120,15 +121,20 @@ const findMatchingSelector = (
   });
 };
 
+/**
+ * Mutates passed node with any transforms and cleans tags and text.
+ *
+ * **NOTE:** Make sure to `.clone` if mutation will cause problems
+ */
 const transformAndClean = (
   $: cheerio.Root,
   $node: cheerio.Cheerio,
   url: string,
-  extractionOpts: InnerExtractorOptions
+  extractionOpts?: InnerExtractorOptions
 ) => {
   makeLinksAbsolute($node, $, url);
-  cleanBySelectors($node, $, extractionOpts as InnerExtractorOptions);
-  transformElements($node, $, extractionOpts as InnerExtractorOptions);
+  cleanBySelectors($node, $, extractionOpts);
+  transformElements($node, $, extractionOpts);
   return $node;
 };
 
@@ -310,7 +316,7 @@ function extractResult<T extends Exclude<DefaultContentType, 'comment'>>(
 }
 
 const selectNestedComments = (
-  opts: Omit<SelectedExtractOptions<CommentInnerExtractorOptions>, 'type'>
+  opts: Omit<SelectedExtractOptions<CommentExtractorOptions>, 'type'>
 ): Comment[] | undefined => {
   const { $, extractionOpts } = opts;
   // Skip if there's not extraction for this type
@@ -331,8 +337,18 @@ const selectNestedComments = (
     return undefined;
   }
 
+  const comments: Comment[] = [];
+
   // Always extractHtml
-  const getComment = (node: cheerio.Element): Comment | undefined => {
+  const getComment = (
+    node: cheerio.Element
+  ): { comment: Comment; append: boolean } | undefined => {
+    const nodeTransformer = extractionOpts.childLevel?.nodeTransform;
+
+    if (nodeTransformer) {
+      nodeTransformer($, node, comments);
+    }
+
     const text = selectConcatinating(
       {
         ...opts,
@@ -367,8 +383,53 @@ const selectNestedComments = (
       node
     );
 
-    const childExtractionOpts = extractionOpts.childLevel;
+    const comment: Comment = {
+      author,
+      score,
+      text: normalizeSpaces(text),
+    };
 
+    const insertTransformer = extractionOpts.childLevel?.insertTransform;
+
+    if (insertTransformer) {
+      insertTransformer($, node, comment, comments);
+    }
+
+    return {
+      comment,
+      append: !insertTransformer,
+    };
+  };
+
+  const createCommentBuilder =
+    (
+      commentGroup: Comment[],
+      childExtractionOpts: ChildLevelCommentExtractorOptions | undefined
+    ) =>
+    (element: cheerio.Element) => {
+      const commentWrapper = getComment(element);
+
+      if (!commentWrapper) {
+        return;
+      }
+
+      const { comment: newComment, append } = commentWrapper;
+
+      if (append) {
+        commentGroup.push(newComment);
+      }
+
+      // Process children
+      if (childExtractionOpts) {
+        processCommentChildren(element, newComment, childExtractionOpts);
+      }
+    };
+
+  const processCommentChildren = (
+    node: cheerio.Element,
+    comment: Comment,
+    childExtractionOpts: ChildLevelCommentExtractorOptions
+  ) => {
     const childMatchingSelector = findMatchingSelector(
       $,
       childExtractionOpts?.selectors ?? [],
@@ -381,17 +442,16 @@ const selectNestedComments = (
       ? childMatchingSelector.join(',')
       : childMatchingSelector;
 
-    return {
-      author,
-      score,
-      text: normalizeSpaces(text),
-      children: childSelector
-        ? $(childSelector, node)
-            .map((_, element) => getComment(element))
-            .get()
-            .filter(c => !!c)
-        : undefined,
-    };
+    if (!childSelector) {
+      return;
+    }
+
+    const commentBuilder = createCommentBuilder(
+      (comment.children ??= []),
+      childExtractionOpts
+    );
+
+    $(childSelector, node).each((_, element) => commentBuilder(element));
   };
 
   // If matching selector is an array, we're considering this a
@@ -403,11 +463,13 @@ const selectNestedComments = (
     return undefined;
   }
 
+  const commentBuilder = createCommentBuilder(
+    comments,
+    extractionOpts.childLevel
+  );
+
   const $content = $(matchingSelector.join(','));
-  const comments: Comment[] = $content
-    .map((_, element) => getComment(element))
-    .get()
-    .filter(c => !!c);
+  $content.each((_, element) => commentBuilder(element));
 
   // TODO: Run cleaners?
   return comments;

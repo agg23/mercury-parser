@@ -29,9 +29,33 @@ export type DefaultContentType =
   | 'direction'
   | 'url_and_domain';
 
-export interface CommentInnerExtractorOptions {
+export interface ChildLevelCommentExtractorOptions
+  extends Omit<InnerExtractorOptions, 'transforms'> {
+  /**
+   * Modify the comment node before applying selectors to extract features
+   */
+  nodeTransform?: (
+    $: cheerio.Root,
+    node: cheerio.Element,
+    allComments: Comment[]
+  ) => void;
+
+  /**
+   * Modify the comment data object and insert it into the comment tree.
+   *
+   * **NOTE:** Implementing this method overrides automatic insertion of a new comment into the tree. Comments must be inserted manually
+   */
+  insertTransform?: (
+    $: cheerio.Root,
+    node: cheerio.Element,
+    newComment: Comment,
+    allComments: Comment[]
+  ) => void;
+}
+
+export interface CommentExtractorOptions {
   topLevel: InnerExtractorOptions;
-  childLevel?: InnerExtractorOptions;
+  childLevel?: ChildLevelCommentExtractorOptions;
   author: InnerExtractorOptions;
   score?: InnerExtractorOptions;
   text: InnerExtractorOptions;
@@ -44,7 +68,7 @@ export type CustomExtractor = {
   supportedDomains?: string[];
   extend?: Extend;
 
-  comment?: CommentInnerExtractorOptions;
+  comment?: CommentExtractorOptions;
 };
 
 export interface ExtractorOptions {
