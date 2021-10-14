@@ -53,4 +53,22 @@ export const WwwRedditComExtractor = {
     // the result
     clean: ['.icon'],
   },
+
+  comment: {
+    topLevel: {
+      selectors: [['.commentarea > div > .comment']],
+    },
+    childLevel: {
+      selectors: [['> .child > div > .comment']],
+    },
+    author: {
+      selectors: [['.author']],
+    },
+    score: {
+      selectors: [['.score']],
+    },
+    text: {
+      selectors: [['.usertext-body']],
+    },
+  },
 };

@@ -11,21 +11,25 @@ const fs = require('fs');
 
 describe('WwwRedditComExtractor', () => {
   describe('initial test case', () => {
-    let result;
-    let url;
-    beforeAll(() => {
-      url =
+    const fetchDefault = async () => {
+      const url =
         'https://www.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
       const html = fs.readFileSync(
         './fixtures/www.reddit.com/1551705199548.html'
       );
-      result = parse(url, { html, fallback: true });
-    });
+      const result = parse(url, { html, fallback: true });
+
+      return {
+        url,
+        result,
+      };
+    };
 
     it('is selected properly', () => {
       // This test should be passing by default.
       // It sanity checks that the correct parser
       // is being selected for URLs from this domain
+      const { url } = fetchDefault();
       const extractor = getExtractor(url);
       assert.equal(extractor.domain, URL.parse(url).hostname);
     });
@@ -33,6 +37,7 @@ describe('WwwRedditComExtractor', () => {
     it('returns the title', async () => {
       // To pass this test, fill out the title selector
       // in ./src/extractors/custom/www.reddit.com/index.js.
+      const { result } = fetchDefault();
       const { title } = await result;
 
       // Update these values with the expected values from
@@ -46,6 +51,7 @@ describe('WwwRedditComExtractor', () => {
     it('returns the author', async () => {
       // To pass this test, fill out the author selector
       // in ./src/extractors/custom/www.reddit.com/index.js.
+      const { result } = fetchDefault();
       const { author } = await result;
 
       // Update these values with the expected values from
@@ -56,6 +62,7 @@ describe('WwwRedditComExtractor', () => {
     it('returns the date_published', async () => {
       // To pass this test, fill out the date_published selector
       // in ./src/extractors/custom/www.reddit.com/index.js.
+      const { result } = fetchDefault();
       const { date_published } = await result;
       const newDatePublished = moment(date_published).format().split('T')[0];
       const expectedDate = moment()
@@ -92,6 +99,7 @@ describe('WwwRedditComExtractor', () => {
       // in ./src/extractors/custom/www.reddit.com/index.js.
       // You may also want to make use of the clean and transform
       // options.
+      const { result } = fetchDefault();
       const { content } = await result;
 
       const $ = cheerio.load(content || '');
@@ -111,8 +119,9 @@ describe('WwwRedditComExtractor', () => {
         './fixtures/www.reddit.com/1633882514577.html'
       );
 
+      // TODO: Change to old.reddit.com
       const uri =
-        'https://old.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
+        'https://www.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
 
       const { comments } = await parse(uri, { html });
 

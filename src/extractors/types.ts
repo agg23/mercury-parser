@@ -29,12 +29,22 @@ export type DefaultContentType =
   | 'direction'
   | 'url_and_domain';
 
+export interface CommentInnerExtractorOptions {
+  topLevel: InnerExtractorOptions;
+  childLevel?: InnerExtractorOptions;
+  author: InnerExtractorOptions;
+  score?: InnerExtractorOptions;
+  text: InnerExtractorOptions;
+}
+
 export type CustomExtractor = {
-  [Key in DefaultContentType]: InnerExtractorOptions;
+  [Key in Exclude<DefaultContentType, 'comment'>]?: InnerExtractorOptions;
 } & {
   domain: string;
   supportedDomains?: string[];
   extend?: Extend;
+
+  comment?: CommentInnerExtractorOptions;
 };
 
 export interface ExtractorOptions {
@@ -57,18 +67,19 @@ export interface ExtractorOptions {
   extractionOpts?: InnerExtractorOptions | string;
 }
 
-export interface ExtractResultOptions extends ExtractorOptions {
-  type: DefaultContentType;
+export interface ExtractResultOptions<T extends DefaultContentType>
+  extends ExtractorOptions {
+  type: T;
   extractor: CustomExtractor;
   title?: string;
 }
 
-export interface SelectedExtractOptions {
+export interface SelectedExtractOptions<T = InnerExtractorOptions | string> {
   $: cheerio.Root;
   html: string;
   url: string;
   type: DefaultContentType;
-  extractionOpts?: InnerExtractorOptions | string;
+  extractionOpts?: T;
 
   extractHtml?: boolean;
 }

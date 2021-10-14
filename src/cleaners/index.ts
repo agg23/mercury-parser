@@ -5,6 +5,7 @@ import { cleanDatePublished } from './date-published';
 import { cleanContent } from './content';
 import { cleanTitle } from './title';
 import { CleanerOptions } from '../extractors/types';
+import { cleanComment } from './comment';
 
 const wrapStringMethodFromCheerio =
   <TReturn, TRest extends any[]>(
@@ -18,6 +19,7 @@ const InternalCleaners = {
   lead_image_url: wrapStringMethodFromCheerio(cleanImage),
   dek: cleanDek,
   date_published: wrapStringMethodFromCheerio(cleanDatePublished),
+  comment: cleanComment,
   content: (input: cheerio.Cheerio, opts: CleanerOptions) =>
     cleanContent(input, opts).toString(),
   title: wrapStringMethodFromCheerio(cleanTitle),
