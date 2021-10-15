@@ -36,7 +36,7 @@ export const GenericContentExtractor = {
     // turning them off as we try to extract content.
     let node = this.getContentNode($, title, url, options);
 
-    if (nodeIsSufficient(node)) {
+    if (!!node && nodeIsSufficient(node)) {
       return this.cleanAndReturnNode(node, $);
     }
 
@@ -51,7 +51,7 @@ export const GenericContentExtractor = {
 
       node = this.getContentNode($, title, url, options);
 
-      if (nodeIsSufficient(node)) {
+      if (!!node && nodeIsSufficient(node)) {
         break;
       }
     }
@@ -76,7 +76,7 @@ export const GenericContentExtractor = {
   // Once we got here, either we're at our last-resort node, or
   // we broke early. Make sure we at least have -something- before we
   // move forward.
-  cleanAndReturnNode(node: cheerio.Cheerio, $: cheerio.Root) {
+  cleanAndReturnNode(node: cheerio.Cheerio | undefined, $: cheerio.Root) {
     if (!node) {
       return undefined;
     }

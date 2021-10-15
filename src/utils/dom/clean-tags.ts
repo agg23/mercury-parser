@@ -9,21 +9,25 @@ import { getOrInitScore } from 'extractors/generic/content/scoring/add-score';
 import { setScore } from 'extractors/generic/content/scoring/set-score';
 import { scoreCommas } from 'extractors/generic/content/scoring/score-commas';
 
-import { CLEAN_CONDITIONALLY_TAGS, KEEP_CLASS } from './constants';
+import {
+  CLEAN_CONDITIONALLY_TAGS,
+  CLEAN_CONDITIONALLY_TAGS_SELECTOR,
+  KEEP_CLASS,
+} from './constants';
 import { normalizeSpaces } from '../text';
 import { linkDensity } from './link-density';
 
-function removeUnlessContent(
+const doesContainContent = (
   $node: cheerio.Cheerio,
   $: cheerio.Root,
   weight: number
-) {
+): boolean => {
   // Explicitly save entry-content-asset tags, which are
   // noted as valuable in the Publisher guidelines. For now
   // this works everywhere. We may want to consider making
   // this less of a sure-thing later.
   if ($node.hasClass('entry-content-asset')) {
-    return;
+    return true;
   }
 
   const content = normalizeSpaces($node.text());
@@ -34,8 +38,7 @@ function removeUnlessContent(
 
     // Looks like a form, too many inputs.
     if (inputCount > pCount / 3) {
-      $node.remove();
-      return;
+      return false;
     }
 
     const contentLength = content.length;
@@ -44,8 +47,7 @@ function removeUnlessContent(
     // Content is too short, and there are no images, so
     // this is probably junk content.
     if (contentLength < 25 && imgCount === 0) {
-      $node.remove();
-      return;
+      return false;
     }
 
     const density = linkDensity($node);
@@ -54,8 +56,7 @@ function removeUnlessContent(
     // something similar.
     // console.log(weight, density, contentLength)
     if (weight < 25 && density > 0.2 && contentLength > 75) {
-      $node.remove();
-      return;
+      return false;
     }
 
     // Too high of a link density, despite the score being
@@ -72,36 +73,39 @@ function removeUnlessContent(
           previousNode &&
           normalizeSpaces(previousNode.text()).slice(-1) === ':'
         ) {
-          return;
+          return true;
         }
       }
 
-      $node.remove();
-      return;
+      return false;
     }
 
     const scriptCount = $('script', $node).length;
 
     // Too many script tags, not enough content.
     if (scriptCount > 0 && contentLength < 150) {
-      $node.remove();
+      return false;
     }
   }
-}
 
-// Given an article, clean it of some superfluous content specified by
-// tags. Things like forms, ads, etc.
-//
-// Tags is an array of tag name's to search through. (like div, form,
-// etc)
-//
-// Return this same doc.
-export function cleanTags($article: cheerio.Cheerio, $: cheerio.Root) {
-  $(CLEAN_CONDITIONALLY_TAGS, $article).each((index, node) => {
+  return true;
+};
+
+/**
+ * Given an article, clean it of some superfluous content specified by
+ * tags. Things like forms, ads, etc.
+ *
+ * Tags is an array of tag name's to search through. (like div, form,
+ * etc)
+ * @returns The modified article
+ */
+export const cleanTags = ($article: cheerio.Cheerio, $: cheerio.Root) => {
+  const checkIsContentNode = (node: cheerio.Element) => {
     const $node = $(node);
     // If marked to keep, skip it
-    if ($node.hasClass(KEEP_CLASS) || $node.find(`.${KEEP_CLASS}`).length > 0)
-      return;
+    if ($node.hasClass(KEEP_CLASS) || $node.find(`.${KEEP_CLASS}`).length > 0) {
+      return true;
+    }
 
     let weight = getScore($node);
     if (!weight) {
@@ -112,11 +116,35 @@ export function cleanTags($article: cheerio.Cheerio, $: cheerio.Root) {
     // drop node if its weight is < 0
     if (weight < 0) {
       $node.remove();
-    } else {
-      // deteremine if node seems like content
-      removeUnlessContent($node, $, weight);
+      return false;
     }
-  });
 
-  return $;
-}
+    // deteremine if node seems like content
+    if (!doesContainContent($node, $, weight)) {
+      $node.remove();
+      return false;
+    }
+
+    return true;
+  };
+
+  const topLevelNodes = $article.toArray();
+
+  if (topLevelNodes.length === 1) {
+    const root = topLevelNodes[0];
+
+    if (
+      root.type === 'tag' &&
+      CLEAN_CONDITIONALLY_TAGS.includes(root.tagName) &&
+      !checkIsContentNode(root)
+    ) {
+      return undefined;
+    }
+  }
+
+  $(CLEAN_CONDITIONALLY_TAGS_SELECTOR, $article).each((_, node) =>
+    checkIsContentNode(node)
+  );
+
+  return $article;
+};

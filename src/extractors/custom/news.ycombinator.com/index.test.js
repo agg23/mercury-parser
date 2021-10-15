@@ -54,7 +54,10 @@ describe('Hacker News Extractor', () => {
 
       const firstComment = comments[0];
 
-      assert.equal(firstComment.author, 'mouzogu');
+      assert.equal(
+        firstComment.author,
+        '<a href="https://news.ycombinator.com/user?id=mouzogu" class="hnuser">mouzogu</a>'
+      );
 
       const $ = cheerio.load(`<div>${firstComment.text}</div>`);
       const first11 = excerptContent($('*').first().text(), 11);
@@ -64,8 +67,14 @@ describe('Hacker News Extractor', () => {
       );
 
       assert.equal(firstComment.children.length, 6);
-      assert.equal(firstComment.children[0].author, 'ChicagoBoy11');
-      assert.equal(firstComment.children[0].children[0].author, 'billylo');
+      assert.equal(
+        firstComment.children[0].author,
+        '<a href="https://news.ycombinator.com/user?id=ChicagoBoy11" class="hnuser">ChicagoBoy11</a>'
+      );
+      assert.equal(
+        firstComment.children[0].children[0].author,
+        '<a href="https://news.ycombinator.com/user?id=billylo" class="hnuser">billylo</a>'
+      );
     });
 
     it('returns the author', async () => {

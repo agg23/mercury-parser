@@ -6,7 +6,7 @@ import { TEXT_LINK_RE } from './constants';
 // Take a dek HTML fragment, and return the cleaned version of it.
 // Return None if the dek wasn't good enough.
 export function cleanDek(
-  dek: cheerio.Cheerio,
+  dek: string,
   { $, excerpt }: { $: cheerio.Root; excerpt?: string }
 ) {
   // Sanity check that we didn't get too short or long of a dek.

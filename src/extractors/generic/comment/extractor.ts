@@ -1,6 +1,4 @@
 import cheerio from 'cheerio';
-import { cleanContent } from 'cleaners';
-import { normalizeSpaces } from 'utils/text';
 
 import { ExtractorOptions } from '../content/types';
 import { extractBestNodes } from './extract-best-node';

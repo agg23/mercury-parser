@@ -1,5 +1,6 @@
 export const WwwRedditComExtractor = {
   domain: 'www.reddit.com',
+  supportedDomains: ['old.reddit.com'],
 
   title: {
     selectors: ['div[data-test-id="post-content"] h2'],
@@ -52,6 +53,7 @@ export const WwwRedditComExtractor = {
     // The clean selectors will remove anything that matches from
     // the result
     clean: ['.icon'],
+    allowMultiple: true,
   },
 
   comment: {

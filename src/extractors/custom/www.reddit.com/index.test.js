@@ -11,7 +11,7 @@ const fs = require('fs');
 
 describe('WwwRedditComExtractor', () => {
   describe('initial test case', () => {
-    const fetchDefault = async () => {
+    const fetchDefault = () => {
       const url =
         'https://www.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
       const html = fs.readFileSync(
@@ -102,7 +102,8 @@ describe('WwwRedditComExtractor', () => {
       const { result } = fetchDefault();
       const { content } = await result;
 
-      const $ = cheerio.load(content || '');
+      assert.equal(content.length, 1);
+      const $ = cheerio.load(content[0]);
 
       const first13 = excerptContent($('*').first().text(), 13);
 
@@ -119,9 +120,8 @@ describe('WwwRedditComExtractor', () => {
         './fixtures/www.reddit.com/1633882514577.html'
       );
 
-      // TODO: Change to old.reddit.com
       const uri =
-        'https://www.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
+        'https://old.reddit.com/r/Showerthoughts/comments/awx46q/vanilla_becoming_the_default_flavour_of_ice_cream/';
 
       const { comments } = await parse(uri, { html });
 
@@ -129,11 +129,17 @@ describe('WwwRedditComExtractor', () => {
 
       const firstComment = comments[0];
 
-      assert.equal(firstComment.author, 'LorenzoPg');
-      assert.equal(firstComment.score, '11.0k points');
+      assert.equal(
+        firstComment.author,
+        '<a href="https://old.reddit.com/user/LorenzoPg" class="author may-blank id-t2_narnh">LorenzoPg</a>'
+      );
+      assert.equal(
+        firstComment.score,
+        '<span class="score dislikes" title="10960">11.0k points</span>'
+      );
       assert.equal(
         firstComment.text,
-        'Fun fact: Vanilla (the real stuff) has a similar price to silver.'
+        '<div class="usertext-body may-blank-within md-container "><div class="md"><p>Fun fact: Vanilla (the real stuff) has a similar price to silver.</p></div></div>'
       );
     });
 
@@ -146,7 +152,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      assert.equal(content, '<div></div>');
+      assert.equal(content, undefined);
     });
 
     it('handles image posts', async () => {
@@ -158,7 +164,8 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      const $ = cheerio.load(content || '');
+      assert.equal(content.length, 1);
+      const $ = cheerio.load(content[0]);
 
       const image = $(
         'img[src="https://preview.redd.it/jsc4t74psok21.jpg?width=960&crop=smart&auto=webp&s=54349b21ff628e8c22c053509e86ba84ff9751d3"]'
@@ -176,7 +183,8 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      const $ = cheerio.load(content || '');
+      assert.equal(content.length, 1);
+      const $ = cheerio.load(content[0]);
 
       const video = $(
         'video > source[src="https://v.redd.it/kwhzxoz5rok21/HLSPlaylist.m3u8"]'
@@ -192,9 +200,10 @@ describe('WwwRedditComExtractor', () => {
       const uri =
         'https://www.reddit.com/r/todayilearned/comments/aycizd/til_that_when_jrr_tolkiens_son_michael_signed_up/';
 
-      const { content } = await parse(uri, { html });
+      const { content, lead_image_url } = await parse(uri, { html });
 
-      const $ = cheerio.load(content || '');
+      assert.equal(content.length, 2);
+      const $ = cheerio.load(`<div>${content.join()}</div>`);
 
       const link = $(
         'a[href="https://www.1843magazine.com/culture/look-closer/tolkiens-drawings-reveal-a-wizard-at-work"]'
@@ -205,8 +214,12 @@ describe('WwwRedditComExtractor', () => {
       );
 
       assert.equal(link.length, 2);
-
       assert.equal(image.length, 1);
+
+      assert.equal(
+        lead_image_url,
+        'https://external-preview.redd.it/aAfw35b8zHKSf8kyFXOqZlFI3YkKMoqr4FU1aZmXlMM.jpg?auto=webp&s=4cae349c99b3936fb739fecf749d9aa31948b76b'
+      );
     });
 
     it('handles external image posts with image preview', async () => {
@@ -216,9 +229,10 @@ describe('WwwRedditComExtractor', () => {
       const uri =
         'https://www.reddit.com/r/gifs/comments/4vv0sa/leonardo_dicaprio_scaring_jonah_hill_on_the/';
 
-      const { content } = await parse(uri, { html });
+      const { content, lead_image_url } = await parse(uri, { html });
 
-      const $ = cheerio.load(content || '');
+      assert.equal(content.length, 2);
+      const $ = cheerio.load(`<div>${content.join()}</div>`);
 
       const link = $('a[href="http://i.imgur.com/Qcx1DSD.gifv"]');
 
@@ -227,8 +241,12 @@ describe('WwwRedditComExtractor', () => {
       );
 
       assert.equal(link.length, 1);
-
       assert.equal(image.length, 1);
+
+      assert.equal(
+        lead_image_url,
+        'https://external-preview.redd.it/sKJFPLamiRPOW5u7NTch3ykbFYMwqI5Qr0zlCINMTfU.gif?format=png8&s=56ecd472f8b8b2ee741b3b1cb76cb3a5110a85f9'
+      );
     });
 
     it('handles external link posts with embedded media', async () => {
@@ -240,7 +258,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      const $ = cheerio.load(content || '');
+      const $ = cheerio.load(`<div>${content.join('')}</div>`);
 
       const link = $('a[href="https://youtu.be/dQw4w9WgXcQ"]');
 

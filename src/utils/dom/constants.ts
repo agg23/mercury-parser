@@ -67,7 +67,10 @@ export const CLEAN_CONDITIONALLY_TAGS = [
   'div',
   'button',
   'form',
-].join(',');
+];
+
+export const CLEAN_CONDITIONALLY_TAGS_SELECTOR =
+  CLEAN_CONDITIONALLY_TAGS.join(',');
 
 // cleanWrappingTags
 // Remove root tags that wrap the entire content without adding any information

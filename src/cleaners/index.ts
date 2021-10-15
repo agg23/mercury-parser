@@ -7,32 +7,36 @@ import { cleanTitle } from './title';
 import { CleanerOptions } from '../extractors/types';
 import { cleanComment } from './comment';
 
-const wrapStringMethodFromCheerio =
-  <TReturn, TRest extends any[]>(
-    func: (input: string, ...rest: TRest) => TReturn
-  ) =>
-  (input: cheerio.Cheerio, ...rest: TRest) =>
-    func(input.toString(), ...rest);
-
-const InternalCleaners = {
-  author: wrapStringMethodFromCheerio(cleanAuthor),
-  lead_image_url: wrapStringMethodFromCheerio(cleanImage),
+const InternalStringCleaners = {
+  author: cleanAuthor,
+  lead_image_url: cleanImage,
+  date_published: cleanDatePublished,
+  title: cleanTitle,
   dek: cleanDek,
-  date_published: wrapStringMethodFromCheerio(cleanDatePublished),
-  comment: cleanComment,
-  content: (input: cheerio.Cheerio, opts: CleanerOptions) =>
-    cleanContent(input, opts).toString(),
-  title: wrapStringMethodFromCheerio(cleanTitle),
 };
 
-type CleanersMap = {
-  [Key in keyof typeof InternalCleaners]: (
-    input: cheerio.Cheerio,
+const InternalDOMCleaners = {
+  comment: cleanComment,
+  content: cleanContent,
+};
+
+type StringCleanersMap = {
+  [Key in keyof typeof InternalStringCleaners]: (
+    input: string,
     opts: CleanerOptions
   ) => string | undefined;
 };
 
-export const Cleaners = InternalCleaners as CleanersMap;
+type DOMCleanersMap = {
+  [Key in keyof typeof InternalDOMCleaners]: (
+    input: cheerio.Cheerio,
+    opts: CleanerOptions
+  ) => cheerio.Cheerio | undefined;
+};
+
+export const StringCleaners = InternalStringCleaners as StringCleanersMap;
+
+export const DOMCleaners = InternalDOMCleaners as DOMCleanersMap;
 
 export { cleanAuthor };
 export { cleanImage };

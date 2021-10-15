@@ -18,7 +18,7 @@ export const cleanWrappingTags = (
       }
 
       if (child.type === 'text') {
-        return $node.replaceWith(`<p>${$node.html()}</p>`);
+        return $node.replaceWith(`<div><p>${$node.html()}</p></div>`);
       }
 
       return cleanWrappingTags($node.children(), $);

@@ -14,7 +14,7 @@ import {
 
 // Clean our article content, returning a new, cleaned node.
 export function cleanContent(
-  article: cheerio.Cheerio,
+  content: cheerio.Cheerio,
   {
     $,
     title = '',
@@ -27,6 +27,7 @@ export function cleanContent(
     defaultCleaner?: boolean;
   }
 ) {
+  let article: cheerio.Cheerio | undefined = content;
   // Rewrite the tag name to div if it's a top level node like body or
   // html to avoid later complications with multiple body tags.
   rewriteTopLevel($);
@@ -63,7 +64,11 @@ export function cleanContent(
   // way to detect menus particularly and remove them.
   // Also optionally running, since it can be overly aggressive.
   if (defaultCleaner) {
-    cleanTags(article, $);
+    article = cleanTags(article, $);
+
+    if (!article) {
+      return undefined;
+    }
   }
 
   // Remove empty paragraph nodes
