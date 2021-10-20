@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import URL from 'url';
 
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 import { parse } from 'mercury';
 
 const fs = require('fs');
@@ -89,7 +89,7 @@ describe('NYTimesExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
@@ -109,7 +109,7 @@ describe('NYTimesExtractor', () => {
 
     const { content, title, author } = await parse(uri, { html });
     const $ = cheerio.load(content);
-    const text = excerptContent($('*').first().text(), 13);
+    const text = excerptDomContent($, 13);
 
     assert.equal(title, 'I, Too, Sing America');
     assert.equal(author, 'The New York Times');

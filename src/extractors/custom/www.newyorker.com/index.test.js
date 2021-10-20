@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -86,7 +86,7 @@ describe('NewYorkerExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
@@ -140,10 +140,7 @@ describe('NewYorkerExtractor', () => {
     it('returns multiple authors', async () => {
       const { author } = await result;
 
-      assert.equal(
-        author,
-        'Ysabel YatesIllustration by Claire LordonMay 10, 2019'
-      );
+      assert.equal(author, 'Ysabel Yates, Claire Lordon');
     });
   });
 });

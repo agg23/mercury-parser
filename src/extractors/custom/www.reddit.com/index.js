@@ -53,24 +53,23 @@ export const WwwRedditComExtractor = {
     // The clean selectors will remove anything that matches from
     // the result
     clean: ['.icon'],
-    allowMultiple: true,
   },
 
   comment: {
     topLevel: {
-      selectors: [['.commentarea > div > .comment']],
+      selectors: ['.commentarea > div > .comment'],
     },
     childLevel: {
-      selectors: [['> .child > div > .comment']],
+      selectors: ['> .child > div > .comment'],
     },
     author: {
-      selectors: [['.author']],
+      selectors: ['.author'],
     },
     score: {
-      selectors: [['.score']],
+      selectors: ['.score'],
     },
     text: {
-      selectors: [['.usertext-body']],
+      selectors: ['.usertext-body'],
     },
   },
 };

@@ -6,24 +6,27 @@ import { cleanDatePublished } from './date-published';
 import { cleanContent } from './content';
 import { cleanTitle } from './title';
 import { CleanerOptions } from '../extractors/types';
-declare const InternalCleaners: {
-    author: (input: cheerio.Cheerio) => string;
-    lead_image_url: (input: cheerio.Cheerio) => string | undefined;
+declare const InternalStringCleaners: {
+    author: typeof cleanAuthor;
+    lead_image_url: typeof cleanImage;
+    date_published: typeof cleanDatePublished;
+    title: typeof cleanTitle;
     dek: typeof cleanDek;
-    date_published: (input: cheerio.Cheerio, rest_0?: {
-        timezone?: string | undefined;
-        format?: import("moment").MomentFormatSpecification | undefined;
-    } | undefined) => string | undefined;
-    content: (input: cheerio.Cheerio, opts: CleanerOptions) => string;
-    title: (input: cheerio.Cheerio, rest_0: {
-        url: string;
+};
+declare const InternalDOMCleaners: {
+    comment: (commentDOM: cheerio.Cheerio, { $, }: {
         $: cheerio.Root;
-    }) => string;
+    }) => cheerio.Cheerio;
+    content: typeof cleanContent;
 };
-declare type CleanersMap = {
-    [Key in keyof typeof InternalCleaners]: (input: cheerio.Cheerio, opts: CleanerOptions) => string | undefined;
+declare type StringCleanersMap = {
+    [Key in keyof typeof InternalStringCleaners]: (input: string, opts: CleanerOptions) => string | undefined;
 };
-export declare const Cleaners: CleanersMap;
+declare type DOMCleanersMap = {
+    [Key in keyof typeof InternalDOMCleaners]: (input: cheerio.Cheerio, opts: CleanerOptions) => cheerio.Cheerio | undefined;
+};
+export declare const StringCleaners: StringCleanersMap;
+export declare const DOMCleaners: DOMCleanersMap;
 export { cleanAuthor };
 export { cleanImage };
 export { cleanDek };

@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -70,7 +70,7 @@ describe('WwwLemondeFrExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       assert.equal(
         first13,

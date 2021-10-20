@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -99,13 +99,13 @@ describe('WwwItmediaCoJpExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 1);
+      const first13 = excerptDomContent($, 1);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        'とある自作PCユーザーが平成最後の年にふと目覚め、ほぼ5年ぶりにPCを新調した経緯をまとめた本連載。前回の記事では、Intelが提唱したNext'
+        'とある自作PCユーザーが平成最後の年にふと目覚め、ほぼ5年ぶりにPCを新調した経緯をまとめた本連載。'
       );
     });
   });

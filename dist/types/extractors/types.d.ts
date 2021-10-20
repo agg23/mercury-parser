@@ -11,12 +11,32 @@ export interface InnerExtractorOptions {
     clean?: string[];
 }
 export declare type DefaultContentType = 'content' | 'comment' | 'title' | 'date_published' | 'author' | 'next_page_url' | 'lead_image_url' | 'excerpt' | 'dek' | 'word_count' | 'direction' | 'url_and_domain';
+export interface ChildLevelCommentExtractorOptions extends Omit<InnerExtractorOptions, 'transforms'> {
+    /**
+     * Modify the comment node before applying selectors to extract features
+     */
+    nodeTransform?: ($: cheerio.Root, node: cheerio.Element, allComments: Comment[]) => void;
+    /**
+     * Modify the comment data object and insert it into the comment tree.
+     *
+     * **NOTE:** Implementing this method overrides automatic insertion of a new comment into the tree. Comments must be inserted manually
+     */
+    insertTransform?: ($: cheerio.Root, node: cheerio.Element, newComment: Comment, allComments: Comment[]) => void;
+}
+export interface CommentExtractorOptions {
+    topLevel: InnerExtractorOptions;
+    childLevel?: ChildLevelCommentExtractorOptions;
+    author: InnerExtractorOptions;
+    score?: InnerExtractorOptions;
+    text: InnerExtractorOptions;
+}
 export declare type CustomExtractor = {
-    [Key in DefaultContentType]: InnerExtractorOptions;
+    [Key in Exclude<DefaultContentType, 'comment'>]?: InnerExtractorOptions;
 } & {
     domain: string;
     supportedDomains?: string[];
     extend?: Extend;
+    comment?: CommentExtractorOptions;
 };
 export interface ExtractorOptions {
     $: cheerio.Root;
@@ -34,21 +54,23 @@ export interface ExtractorOptions {
     excerpt?: string;
     extractionOpts?: InnerExtractorOptions | string;
 }
-export interface ExtractResultOptions extends ExtractorOptions {
-    type: DefaultContentType;
+export interface ExtractResultOptions<T extends DefaultContentType> extends ExtractorOptions {
+    type: T;
     extractor: CustomExtractor;
     title?: string;
+    allowConcatination?: boolean;
 }
-export interface SelectedExtractOptions {
+export interface SelectedExtractOptions<T = InnerExtractorOptions | string> {
     $: cheerio.Root;
     html: string;
     url: string;
     type: DefaultContentType;
-    extractionOpts?: InnerExtractorOptions | string;
+    extractionOpts?: T;
+    allowConcatination?: boolean;
     extractHtml?: boolean;
 }
 export declare type CleanerOptions = SelectedExtractOptions & InnerExtractorOptions;
-export declare type Selector = string | [string, string] | [string, string, (item: string) => string];
+export declare type Selector = string | [string, string?] | [string, string?, ((item: string) => string)?];
 export interface Extend {
     [Key: string]: InnerExtractorOptions;
 }
@@ -58,17 +80,31 @@ export interface Comment {
     text: string;
     children?: Comment[];
 }
-export interface ExtractorResult {
-    next_page_url?: string;
-    title: string;
+export declare type SelectionResult = {
+    type: 'content';
+    content: string | string[] | undefined;
+} | {
+    type: 'error';
+};
+export declare type ConcatenatedSelectionResult = {
+    type: 'content';
+    content: string | undefined;
+} | {
+    type: 'error';
+};
+interface BaseExtractorResult {
+    url: string;
+    domain?: string;
     content?: string;
+    next_page_url?: string;
+}
+export interface ExtractorResult extends BaseExtractorResult {
+    title: string;
     comments?: Comment[];
     author?: string;
     date_published?: string;
     dek?: undefined;
     lead_image_url?: string;
-    url: string;
-    domain?: string;
     excerpt: string;
     word_count: number;
     direction: 'ltr' | 'rtl';
@@ -76,8 +112,7 @@ export interface ExtractorResult {
 export interface FullExtractorResult extends ExtractorResult {
     type: 'full';
 }
-export interface ContentExtractorResult {
+export interface ContentExtractorResult extends BaseExtractorResult {
     type: 'contentOnly';
-    content?: string;
-    next_page_url?: string;
 }
+export {};

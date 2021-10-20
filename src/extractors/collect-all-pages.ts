@@ -1,6 +1,6 @@
 import { removeAnchor } from '../utils/text';
-import { RootExtractor } from '../extractors/root-extractor';
-import { GenericExtractor } from '../extractors/generic';
+import { RootExtractor } from './root-extractor';
+import { GenericExtractor } from './generic';
 import Resource from '../resource';
 import { CustomExtractor, ExtractorOptions, ExtractorResult } from './types';
 

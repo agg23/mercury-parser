@@ -1,5 +1,5 @@
 export declare const GenericWordCountExtractor: {
     extract({ content }: {
-        content: string;
+        content: string | undefined;
     }): number;
 };

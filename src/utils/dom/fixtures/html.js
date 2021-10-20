@@ -214,8 +214,8 @@ const HTML = {
         <span>This should remain in a p</span>
       <p>
         This should be wrapped in a p
-      </p><p>This should become a p</p>
-      </p> <p>This should become a p</p>
+      </p></p><p>This should become a p</p>
+      <p></p> <p>This should become a p</p>
     `,
   },
 
@@ -465,14 +465,6 @@ const HTML = {
       </div>
     `,
     after: `
-      <div score="5">
-        <p>What do you think?</p>
-        <p>
-        </p>
-        <p>What do you think?</p>
-      </div>
-    `,
-    afterBrowser: `
       <div score="5">
         <p>What do you think?</p>
         <p>

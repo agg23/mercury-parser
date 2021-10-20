@@ -11,6 +11,6 @@ export declare const GenericContentExtractor: {
         title: string;
         url: string;
     }, opts?: ExtractorOptions | undefined): string | undefined;
-    getContentNode($: cheerio.Root, title: string, url: string, opts: ExtractorOptions): cheerio.Cheerio;
-    cleanAndReturnNode(node: cheerio.Cheerio, $: cheerio.Root): string | undefined;
+    getContentNode($: cheerio.Root, title: string, url: string, opts: ExtractorOptions): cheerio.Cheerio | undefined;
+    cleanAndReturnNode(node: cheerio.Cheerio | undefined, $: cheerio.Root): string | undefined;
 };

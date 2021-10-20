@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -49,6 +49,7 @@ describe('WwwRawstoryComExtractor', () => {
 
       // Update these values with the expected values from
       // the article.
+      // TODO: Failing due to some dependency failing to handle :first-of-type correctly
       assert.equal(author, 'Tana Ganeva');
     });
 
@@ -84,7 +85,7 @@ describe('WwwRawstoryComExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.

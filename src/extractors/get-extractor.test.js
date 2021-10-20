@@ -11,7 +11,7 @@ describe('getExtractor(url)', () => {
       cheerio.load('<div />')
     );
 
-    assert.equal(extractor.domain, '*');
+    assert.ok(!extractor);
   });
 
   it('returns a custom extractor if found', () => {

@@ -1,5 +1,4 @@
 import cheerio from 'cheerio';
-import { assert } from 'console';
 import { normalizeSpaces } from 'utils/text';
 import { DOMCleaners, StringCleaners } from '../cleaners';
 import { convertNodeTo, makeLinksAbsolute, stripNewlines } from '../utils/dom';
@@ -18,6 +17,8 @@ import {
   ContentExtractorResult,
   CommentExtractorOptions,
   ChildLevelCommentExtractorOptions,
+  SelectionResult,
+  ConcatenatedSelectionResult,
 } from './types';
 
 // Remove elements by an array of selectors
@@ -106,16 +107,23 @@ const findMatchingSelector = (
       }
 
       const [s, attr] = selector;
+
+      const selected = selectorTest(s);
+
       return (
-        (allowMultiple || (!allowMultiple && selectorTest(s).length === 1)) &&
-        selectorTest(s).attr(attr) &&
-        selectorTest(s).attr(attr)?.trim() !== ''
+        selected.length > 0 &&
+        (!attr ||
+          selected
+            .toArray()
+            .reduce(
+              (acc: boolean, element) => acc && !!$(element).attr(attr)?.trim(),
+              true
+            ))
       );
     }
 
     return (
-      (allowMultiple ||
-        (!allowMultiple && selectorTest(selector).length === 1)) &&
+      (allowMultiple || selectorTest(selector).length === 1) &&
       selectorTest(selector).text().trim() !== ''
     );
   });
@@ -142,17 +150,28 @@ const transformAndClean = (
 export const select = (
   opts: SelectedExtractOptions,
   root?: cheerio.Cheerio | cheerio.Element
-) => {
-  const { $, type, extractionOpts, extractHtml = false } = opts;
+): SelectionResult => {
+  const {
+    $,
+    type,
+    extractionOpts,
+    extractHtml = false,
+    allowConcatination,
+  } = opts;
   // Skip if there's not extraction for this type
   if (!extractionOpts) {
-    return undefined;
+    return {
+      type: 'error',
+    };
   }
 
   // If a string is hardcoded for a type (e.g., Wikipedia
   // contributors), return the string
   if (typeof extractionOpts === 'string') {
-    return extractionOpts;
+    return {
+      type: 'content',
+      content: extractionOpts,
+    };
   }
 
   const { selectors, defaultCleaner = true, allowMultiple } = extractionOpts;
@@ -166,7 +185,9 @@ export const select = (
   );
 
   if (!matchingSelector) {
-    return undefined;
+    return {
+      type: 'error',
+    };
   }
 
   const boundTransformAndClean = ($node: cheerio.Cheerio) =>
@@ -179,7 +200,7 @@ export const select = (
 
   const $select = buildSelect($, root);
 
-  function selectHtml() {
+  const selectHtml = (): SelectionResult => {
     // If the selector type requests html as its return type
     // transform and clean the element with provided selectors
     let $content: cheerio.Cheerio | undefined;
@@ -189,19 +210,24 @@ export const select = (
     // selectors to include in the result. Note that all selectors in the
     // array must match in order for this selector to trigger
     if (Array.isArray(matchingSelector)) {
-      $content = $select(matchingSelector.join(',')).clone();
-      // const $wrapper = $('<div></div>');
-      // $content.each((_, element) => {
-      //   // TODO: Cheerio doesn't list cheerio.Element as an appendable type
-      //   $wrapper.append($(element));
-      // });
+      $content = $select(matchingSelector.join(','));
+      const $wrapper = $('<div></div>');
+      $content.each((_, element) => {
+        // TODO: Cheerio doesn't list cheerio.Element as an appendable type
+        $wrapper.append($(element));
+      });
 
-      // $content = $wrapper;
+      $content = $wrapper;
     } else {
-      $content = $select(matchingSelector).clone();
-      // // Wrap in div so transformation can take place on root element
-      // $content.wrap($('<div></div>'));
-      // $content = $content.parent();
+      $content = $select(matchingSelector);
+      // Wrap in div so transformation can take place on root element
+      if ($content.toArray().length > 1) {
+        // Limit to first element
+        $content = $($content.toArray()[0]);
+      }
+
+      $content.wrap($('<div></div>'));
+      $content = $content.parent();
     }
 
     $content = boundTransformAndClean($content);
@@ -213,24 +239,39 @@ export const select = (
     }
 
     if (!$content) {
-      return undefined;
+      return {
+        type: 'content',
+        content: undefined,
+      };
     }
 
     if (allowMultiple) {
-      return $content.toArray().map(el => $.html($(el)));
+      return {
+        type: 'content',
+        content: $content
+          .children()
+          .toArray()
+          .map(el => $.html($(el))),
+      };
     }
 
     // return $content.children().first().html() ?? undefined;
-    const array = $content.toArray();
+    const array = $content.children().toArray();
 
-    if (array.length > 1) {
+    if (array.length === 1) {
       // Not allowMultiple. Return first element
-      return $.html(array[0]);
+      return {
+        type: 'content',
+        content: $.html(array[0]),
+      };
     }
 
     // Return full content node
-    return $.html($content);
-  }
+    return {
+      type: 'content',
+      content: $.html($content),
+    };
+  };
 
   if (extractHtml) {
     return selectHtml();
@@ -243,13 +284,29 @@ export const select = (
   if (Array.isArray(matchingSelector)) {
     const [selector, attr, transform] = matchingSelector;
     $match = $select(selector);
-    $match = boundTransformAndClean($match);
-    result = $match.map((_, el) => {
-      const item = $(el).attr(attr)?.trim() ?? '';
-      return transform ? transform(item) : item;
+    const $wrapper = $('<div></div>');
+    $match.each((_, element) => {
+      // TODO: Cheerio doesn't list cheerio.Element as an appendable type
+      $wrapper.append($(element));
     });
+    $match = $wrapper;
+
+    $match = boundTransformAndClean($match);
+
+    if (attr || transform) {
+      result = $match.children().map((_, el) => {
+        const item = attr
+          ? $(el).attr(attr)?.trim() ?? ''
+          : $(el).text().trim();
+        return transform ? transform(item) : item;
+      });
+    } else {
+      result = $match.children().map((_, el) => $(el).text().trim());
+    }
   } else {
     $match = $select(matchingSelector);
+    $match.wrap($('<div></div>'));
+    $match = $match.parent();
     $match = boundTransformAndClean($match);
     result = $match.map((_, el) => $(el).text().trim());
   }
@@ -257,29 +314,48 @@ export const select = (
   const finalResult =
     Array.isArray(result.toArray()) && allowMultiple
       ? (result.toArray() as unknown as string[])
+      : allowConcatination
+      ? (result.toArray() as unknown as string[]).join(', ')
       : (result[0] as unknown as string);
   // Allow custom extractor to skip default cleaner
   // for this type; defaults to true
   if (defaultCleaner && type in StringCleaners) {
-    return StringCleaners[type as keyof typeof StringCleaners](
+    const cleanedString = StringCleaners[type as keyof typeof StringCleaners](
       finalResult as any,
       {
         ...opts,
         ...extractionOpts,
       }
     );
+
+    return {
+      type: 'content',
+      content: cleanedString,
+    };
   }
 
-  return finalResult;
+  return {
+    type: 'content',
+    content: finalResult,
+  };
 };
 
 const selectConcatinating = (
   opts: SelectedExtractOptions,
   root?: cheerio.Cheerio | cheerio.Element
-) => {
+): ConcatenatedSelectionResult => {
   const result = select(opts, root);
 
-  return Array.isArray(result) ? result.join(',') : result;
+  if (result.type === 'error') {
+    return result;
+  }
+
+  const { content } = result;
+
+  return {
+    type: 'content',
+    content: Array.isArray(content) ? content.join(',') : content,
+  };
 };
 
 export function selectExtendedTypes(
@@ -297,8 +373,8 @@ export function selectExtendedTypes(
         type: type as DefaultContentType,
         extractionOpts: extend[type],
       });
-      if (selectedData) {
-        results[type] = selectedData;
+      if (selectedData.type === 'content' && selectedData.content) {
+        results[type] = selectedData.content;
       }
     }
   });
@@ -317,8 +393,8 @@ function extractResult<T extends Exclude<DefaultContentType, 'comment'>>(
   // If custom parser succeeds, return the result
   // A return value of undefined means that the parser successfully selected nothing
   // TODO: Maybe indicate better than using undefined
-  if (result || result === undefined) {
-    return result as Result;
+  if (result.type === 'content') {
+    return result.content as Result;
   }
 
   // If nothing matches the selector, and fallback is enabled,
@@ -329,6 +405,13 @@ function extractResult<T extends Exclude<DefaultContentType, 'comment'>>(
 
   return undefined as Result;
 }
+
+const selectionResultString = (
+  result: ConcatenatedSelectionResult
+): string | undefined =>
+  result.type === 'content' && result.content
+    ? stripNewlines(normalizeSpaces(result.content))
+    : undefined;
 
 const selectNestedComments = (
   opts: Omit<SelectedExtractOptions<CommentExtractorOptions>, 'type'>
@@ -368,8 +451,7 @@ const selectNestedComments = (
     const text = selectConcatinating(
       {
         ...opts,
-        // TODO: Add proper type for cleaning
-        type: 'comment',
+        type: 'content',
         extractionOpts: extractionOpts.text,
       },
       node
@@ -400,9 +482,9 @@ const selectNestedComments = (
     );
 
     const comment: Comment = {
-      author: author ? stripNewlines(author) : undefined,
-      score: score ? stripNewlines(score) : undefined,
-      text: stripNewlines(normalizeSpaces(text)),
+      author: selectionResultString(author),
+      score: selectionResultString(score),
+      text: selectionResultString(text) ?? '',
     };
 
     const insertTransformer = extractionOpts.childLevel?.insertTransform;
@@ -437,6 +519,7 @@ const selectNestedComments = (
 
       // Process children
       if (childExtractionOpts) {
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         processCommentChildren(element, newComment, childExtractionOpts);
       }
     };
@@ -470,21 +553,16 @@ const selectNestedComments = (
     $(childSelector, node).each((_, element) => commentBuilder(element));
   };
 
-  // If matching selector is an array, we're considering this a
-  // multi-match selection, which allows the parser to choose several
-  // selectors to include in the result. Note that all selectors in the
-  // array must match in order for this selector to trigger
-  if (!Array.isArray(matchingSelector)) {
-    assert(false, 'Comment matching selector is not an array');
-    return undefined;
-  }
-
   const commentBuilder = createCommentBuilder(
     comments,
     extractionOpts.childLevel
   );
 
-  const $content = $(matchingSelector.join(','));
+  const $content = $(
+    Array.isArray(matchingSelector)
+      ? matchingSelector.join(',')
+      : matchingSelector
+  );
   $content.each((_, element) => commentBuilder(element));
 
   // TODO: Run cleaners?
@@ -533,6 +611,11 @@ export const RootExtractor = {
       extractor,
     };
 
+    const { url, domain } = extractResult<'url_and_domain'>({
+      ...selectionOptions,
+      type: 'url_and_domain',
+    }) ?? { url: undefined, domain: undefined };
+
     if (contentOnly) {
       const content = extractResult<'content'>({
         ...selectionOptions,
@@ -547,6 +630,8 @@ export const RootExtractor = {
 
       return {
         type: 'contentOnly',
+        url,
+        domain,
         content,
         next_page_url,
       };
@@ -562,6 +647,7 @@ export const RootExtractor = {
     const author = extractResult<'author'>({
       ...selectionOptions,
       type: 'author',
+      allowConcatination: true,
     });
     const next_page_url = extractResult<'next_page_url'>({
       ...selectionOptions,
@@ -603,10 +689,6 @@ export const RootExtractor = {
       type: 'direction',
       title,
     });
-    const { url, domain } = extractResult<'url_and_domain'>({
-      ...selectionOptions,
-      type: 'url_and_domain',
-    }) || { url: null, domain: null };
 
     let extendedResults: Record<string, string | string[]> = {};
     if (extractor.extend) {

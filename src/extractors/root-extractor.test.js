@@ -150,7 +150,7 @@ describe('select(opts)', () => {
     };
 
     const result = select(opts);
-    assert.equal(result, 'Bob');
+    assert.equal(result.content, 'Bob');
   });
 
   it("returns a node's attr with an attr selector", () => {
@@ -171,13 +171,14 @@ describe('select(opts)', () => {
     };
 
     const result = select(opts);
-    assert.equal(result, '2016-09-07T09:07:59.000Z');
+    assert.equal(result.content, '2016-09-07T09:07:59.000Z');
   });
 
   it("returns a node's html when it is a content selector", () => {
     const html = `
       <div><div class="content-is-here"><p>Wow what a piece of content</p></div></div>
     `;
+    const output = `<p>Wow what a piece of content</p>`;
     const $ = cheerio.load(html);
     const opts = {
       type: 'content',
@@ -189,7 +190,7 @@ describe('select(opts)', () => {
     };
 
     const result = select(opts);
-    assertClean(result, html);
+    assertClean(result.content, output);
   });
 
   it('handles multiple matches when the content selector is an array', () => {
@@ -199,16 +200,18 @@ describe('select(opts)', () => {
     const $ = cheerio.load(html);
     const opts = {
       type: 'content',
+      url: 'http://foo.com',
       $,
       extractionOpts: {
         selectors: [['.lead-image', '.content-is-here']],
+        // allowMultiple: true,
       },
       extractHtml: true,
     };
 
     const result = select(opts);
-    assert.equal($(result).find('img.lead-image').length, 1);
-    assert.equal($(result).find('.content-is-here').length, 1);
+    assert.equal($(result.content).find('img.lead-image').length, 1);
+    assert.equal($(result.content).find('.content-is-here').length, 1);
   });
 
   it('skips multi-match if not all selectors are present', () => {
@@ -227,7 +230,7 @@ describe('select(opts)', () => {
 
     const result = select(opts);
 
-    assert.equal(result, null);
+    assert.ok(!result.content);
   });
 
   it('returns an array of results if allowMultiple is true', () => {
@@ -239,7 +242,7 @@ describe('select(opts)', () => {
       type: 'items',
       $,
       extractionOpts: {
-        selectors: ['.item'],
+        selectors: [['.item']],
         allowMultiple: true,
       },
       extractHtml: true,
@@ -247,8 +250,8 @@ describe('select(opts)', () => {
 
     const result = select(opts);
 
-    assert.equal(result.length, 2);
-    assert.deepEqual(result, [
+    assert.equal(result.content.length, 2);
+    assert.deepEqual(result.content, [
       '<li class="item">One</li>',
       '<li class="item">Two</li>',
     ]);
@@ -272,8 +275,8 @@ describe('select(opts)', () => {
     const result = select(opts);
 
     assert.equal(
-      result,
-      '<div><a class="linky" href="http://example.com/foo">Bar</a></div>'
+      result.content,
+      '<a class="linky" href="http://example.com/foo">Bar</a>'
     );
   });
 
@@ -294,7 +297,7 @@ describe('select(opts)', () => {
 
     const result = select(opts);
 
-    assert.deepEqual(result, [
+    assert.deepEqual(result.content, [
       'http://example.com/foo',
       'http://example.com/bar',
     ]);

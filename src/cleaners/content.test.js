@@ -19,7 +19,11 @@ describe('extractCleanNode(article, { $, cleanConditionally, title } })', () => 
 
     const bestNode = extractBestNode($, opts);
 
-    const cleanNode = cleanContent(bestNode, { $, opts });
+    const cleanNode = cleanContent(bestNode, {
+      $,
+      opts,
+      url: 'https://www.wired.com',
+    });
 
     const text = $(cleanNode)
       .text()

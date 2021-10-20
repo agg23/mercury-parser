@@ -10,6 +10,7 @@ import {
   stripJunkTags,
   makeLinksAbsolute,
   cleanWrappingTags,
+  stripEmptyTextNodes,
 } from '../utils/dom';
 
 // Clean our article content, returning a new, cleaned node.
@@ -76,6 +77,8 @@ export function cleanContent(
 
   // Remove unnecessary attributes
   cleanAttributes(article, $);
+
+  stripEmptyTextNodes(article, $);
 
   return cleanWrappingTags(article, $);
 }

@@ -9,11 +9,7 @@ import { getOrInitScore } from 'extractors/generic/content/scoring/add-score';
 import { setScore } from 'extractors/generic/content/scoring/set-score';
 import { scoreCommas } from 'extractors/generic/content/scoring/score-commas';
 
-import {
-  CLEAN_CONDITIONALLY_TAGS,
-  CLEAN_CONDITIONALLY_TAGS_SELECTOR,
-  KEEP_CLASS,
-} from './constants';
+import { CLEAN_CONDITIONALLY_TAGS_SELECTOR, KEEP_CLASS } from './constants';
 import { normalizeSpaces } from '../text';
 import { linkDensity } from './link-density';
 
@@ -128,23 +124,11 @@ export const cleanTags = ($article: cheerio.Cheerio, $: cheerio.Root) => {
     return true;
   };
 
-  const topLevelNodes = $article.toArray();
-
-  if (topLevelNodes.length === 1) {
-    const root = topLevelNodes[0];
-
-    if (
-      root.type === 'tag' &&
-      CLEAN_CONDITIONALLY_TAGS.includes(root.tagName) &&
-      !checkIsContentNode(root)
-    ) {
-      return undefined;
-    }
-  }
-
-  $(CLEAN_CONDITIONALLY_TAGS_SELECTOR, $article).each((_, node) =>
-    checkIsContentNode(node)
-  );
+  $(CLEAN_CONDITIONALLY_TAGS_SELECTOR, $article).each((_, node) => {
+    checkIsContentNode(node);
+    // Returning falsy prematurely halts the each
+    return true;
+  });
 
   return $article;
 };

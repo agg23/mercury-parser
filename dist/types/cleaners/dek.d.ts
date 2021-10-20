@@ -1,5 +1,5 @@
 /// <reference types="cheerio" />
-export declare function cleanDek(dek: cheerio.Cheerio, { $, excerpt }: {
+export declare function cleanDek(dek: string, { $, excerpt }: {
     $: cheerio.Root;
     excerpt?: string;
 }): string | undefined;

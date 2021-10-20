@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -106,13 +106,13 @@ describe('WwwJnsaOrgExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 2);
+      const first13 = excerptDomContent($, 2);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        '情報セキュリティ対策を予防、防御、検知、回復と分類すると、これまでは防御に重きをおいてきたのではないでしょうか。 システム設計には経営目標を実現し、インシデントが発生しても早期発見、早期対処をするための仕組みを盛り込むことが重要です。'
+        '情報セキュリティ対策を予防、防御、検知、回復と分類すると、これまでは防御に重きをおいてきたのではないでしょうか。システム設計には経営目標を実現し、インシデントが発生しても早期発見、早期対処をするための仕組みを盛り込むことが重要です。 西日本支部では、ビジネス継続するためだけではなく、さらに経営の向上を図るため、日常における可用性、完全性、および信頼性、真正性も含めたセキュリティとは何か、を皆様と会場でご一緒に考えていきたいと思っております。'
       );
     });
   });

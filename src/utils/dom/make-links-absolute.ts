@@ -1,18 +1,25 @@
-import URL from 'url';
-
 import { getAttrs } from './get-attrs';
 import { setAttr } from './set-attr';
 
-function absolutize($: cheerio.Root, rootUrl: string, attr: string) {
-  const baseUrl = $('base').attr('href');
+function absolutize(
+  $: cheerio.Root,
+  $content: cheerio.Cheerio,
+  rootUrl: string,
+  attr: string
+) {
+  let baseUrl = $('base').attr('href');
 
-  $(`[${attr}]`).each((_, node) => {
+  if (baseUrl?.startsWith('//')) {
+    baseUrl = undefined;
+  }
+
+  $(`[${attr}]`, $content).each((_, node) => {
     const attrs = getAttrs(node);
     const url = attrs[attr];
     if (!url) return;
-    const absoluteUrl = URL.resolve(baseUrl || rootUrl, url);
+    const absoluteUrl = new URL(url, baseUrl || rootUrl);
 
-    setAttr(node, attr, absoluteUrl);
+    setAttr(node, attr, absoluteUrl.toString());
   });
 }
 
@@ -37,7 +44,7 @@ function absolutizeSet(
         // a candidate URL cannot start or end with a comma
         // descriptors are separated from the URLs by unescaped whitespace
         const parts = candidate.trim().replace(/,$/, '').split(/\s+/);
-        parts[0] = URL.resolve(rootUrl, parts[0]);
+        parts[0] = new URL(parts[0], rootUrl).toString();
         return parts.join(' ');
       });
       const absoluteUrlSet = [...new Set(absoluteCandidates)].join(', ');
@@ -55,7 +62,7 @@ export function makeLinksAbsolute(
   $: cheerio.Root,
   url: string
 ) {
-  ['href', 'src'].forEach(attr => absolutize($, url, attr));
+  ['href', 'src'].forEach(attr => absolutize($, $content, url, attr));
   absolutizeSet($, url, $content);
 
   return $content;

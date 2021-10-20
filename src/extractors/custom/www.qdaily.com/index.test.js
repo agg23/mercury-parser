@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -90,7 +90,7 @@ describe('WwwQdailyComExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first3 = excerptContent($('*').first().text(), 3);
+      const first3 = excerptDomContent($, 3);
 
       // Update these values with the expected values from
       // the article.

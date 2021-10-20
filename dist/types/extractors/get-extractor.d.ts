@@ -1,2 +1,3 @@
 /// <reference types="cheerio" />
-export declare function getExtractor(url: string, parsedUrl: URL, $: cheerio.Root): import("./types").CustomExtractor;
+import { CustomExtractor } from './types';
+export declare function getExtractor(url: string, parsedUrl: URL, $: cheerio.Root): CustomExtractor | undefined;

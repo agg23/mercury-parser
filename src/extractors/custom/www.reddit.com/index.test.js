@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -102,10 +102,9 @@ describe('WwwRedditComExtractor', () => {
       const { result } = fetchDefault();
       const { content } = await result;
 
-      assert.equal(content.length, 1);
-      const $ = cheerio.load(content[0]);
+      const $ = cheerio.load(content);
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
@@ -139,7 +138,7 @@ describe('WwwRedditComExtractor', () => {
       );
       assert.equal(
         firstComment.text,
-        '<div class="usertext-body may-blank-within md-container "><div class="md"><p>Fun fact: Vanilla (the real stuff) has a similar price to silver.</p></div></div>'
+        '<p>Fun fact: Vanilla (the real stuff) has a similar price to silver.</p>'
       );
     });
 
@@ -164,8 +163,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      assert.equal(content.length, 1);
-      const $ = cheerio.load(content[0]);
+      const $ = cheerio.load(content);
 
       const image = $(
         'img[src="https://preview.redd.it/jsc4t74psok21.jpg?width=960&crop=smart&auto=webp&s=54349b21ff628e8c22c053509e86ba84ff9751d3"]'
@@ -183,8 +181,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      assert.equal(content.length, 1);
-      const $ = cheerio.load(content[0]);
+      const $ = cheerio.load(content);
 
       const video = $(
         'video > source[src="https://v.redd.it/kwhzxoz5rok21/HLSPlaylist.m3u8"]'
@@ -202,8 +199,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content, lead_image_url } = await parse(uri, { html });
 
-      assert.equal(content.length, 2);
-      const $ = cheerio.load(`<div>${content.join()}</div>`);
+      const $ = cheerio.load(`<div>${content}</div>`);
 
       const link = $(
         'a[href="https://www.1843magazine.com/culture/look-closer/tolkiens-drawings-reveal-a-wizard-at-work"]'
@@ -231,8 +227,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content, lead_image_url } = await parse(uri, { html });
 
-      assert.equal(content.length, 2);
-      const $ = cheerio.load(`<div>${content.join()}</div>`);
+      const $ = cheerio.load(`<div>${content}</div>`);
 
       const link = $('a[href="http://i.imgur.com/Qcx1DSD.gifv"]');
 
@@ -258,7 +253,7 @@ describe('WwwRedditComExtractor', () => {
 
       const { content } = await parse(uri, { html });
 
-      const $ = cheerio.load(`<div>${content.join('')}</div>`);
+      const $ = cheerio.load(`<div>${content}</div>`);
 
       const link = $('a[href="https://youtu.be/dQw4w9WgXcQ"]');
 

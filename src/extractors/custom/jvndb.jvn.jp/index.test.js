@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -90,13 +90,13 @@ describe('JvndbJvnJpExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        '概要 NETWAVE MNG6200 デバイスには、証明書・パスワードの管理に関する脆弱性が存在します。 CVSS による深刻度 (CVSS とは?) CVSS v3 による深刻度基本値: 9.8 (緊急)'
+        '概要 NETWAVE MNG6200 デバイスには、証明書・パスワードの管理に関する脆弱性が存在します。 CVSS による深刻度 ( CVSS とは? ) CVSS v3 による深刻度'
       );
     });
   });

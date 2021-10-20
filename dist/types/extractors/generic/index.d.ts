@@ -54,7 +54,7 @@ export declare const GenericExtractor: {
         metaCache: string[];
     }) => string;
     word_count: ({ content }: {
-        content: string;
+        content: string | undefined;
     }) => number;
     direction: ({ title }: {
         title: string;

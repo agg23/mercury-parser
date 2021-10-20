@@ -14,7 +14,7 @@ export default {
     }),
     commonjs(),
     json(),
-    typescript({ tsconfig: './tsconfig.json' }),
+    typescript({ tsconfig: './tsconfig.json', exclude: '**/*.test.ts' }),
     babel({
       babelHelpers: 'runtime',
       // https://github.com/rollup/plugins/issues/381

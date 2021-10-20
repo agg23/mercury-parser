@@ -7,7 +7,7 @@ var Stream = require('stream');
 var require$$2$3 = require('string_decoder');
 var require$$0$6 = require('buffer');
 var http = require('http');
-var URL$1 = require('url');
+var Url = require('url');
 var https = require('https');
 var zlib = require('zlib');
 
@@ -18,7 +18,7 @@ var Stream__default = /*#__PURE__*/_interopDefaultLegacy(Stream);
 var require$$2__default = /*#__PURE__*/_interopDefaultLegacy(require$$2$3);
 var require$$0__default = /*#__PURE__*/_interopDefaultLegacy(require$$0$6);
 var http__default = /*#__PURE__*/_interopDefaultLegacy(http);
-var URL__default = /*#__PURE__*/_interopDefaultLegacy(URL$1);
+var Url__default = /*#__PURE__*/_interopDefaultLegacy(Url);
 var https__default = /*#__PURE__*/_interopDefaultLegacy(https);
 var zlib__default = /*#__PURE__*/_interopDefaultLegacy(zlib);
 
@@ -49333,8 +49333,8 @@ Object.defineProperty(Response.prototype, Symbol.toStringTag, {
 const INTERNALS$2 = Symbol('Request internals');
 
 // fix an issue where "format", "parse" aren't a named export for node <10
-const parse_url = URL__default["default"].parse;
-const format_url = URL__default["default"].format;
+const parse_url = Url__default["default"].parse;
+const format_url = Url__default["default"].format;
 
 const streamDestructionSupported = 'destroy' in Stream__default["default"].Readable.prototype;
 
@@ -49575,7 +49575,7 @@ AbortError.prototype.name = 'AbortError';
 
 // fix an issue where "PassThrough", "resolve" aren't a named export for node <10
 const PassThrough$1 = Stream__default["default"].PassThrough;
-const resolve_url = URL__default["default"].resolve;
+const resolve_url = Url__default["default"].resolve;
 
 /**
  * Fetch function
@@ -49990,11 +49990,7 @@ function hasSentenceEnd(text) {
 }
 
 function excerptContent(content, words = 10) {
-    return content
-        .trim()
-        .split(/\s+/)
-        .slice(0, words)
-        .join(' ');
+    return content.trim().split(/\s+/).slice(0, words).join(' ');
 }
 
 // check a string for encoding; this is
@@ -50147,6 +50143,7 @@ const STRIP_OUTPUT_TAGS = [
     'embed',
     'iframe',
     'object',
+    'svg',
 ];
 const WHITELIST_ATTRS = [
     'src',
@@ -50167,10 +50164,24 @@ const CLEAN_CONDITIONALLY_TAGS = [
     'ul',
     'ol',
     'table',
+    'tr',
     'div',
     'button',
     'form',
-].join(',');
+];
+const CLEAN_CONDITIONALLY_TAGS_SELECTOR = CLEAN_CONDITIONALLY_TAGS.join(',');
+// cleanWrappingTags
+// Remove root tags that wrap the entire content without adding any information
+const CLEAN_WRAPPING_TAGS = [
+    'tr',
+    'td',
+    'blockquote',
+    'button',
+    'div',
+    'span',
+    'p',
+    'pre',
+];
 // cleanHeaders
 const HEADER_TAGS = ['h2', 'h3', 'h4', 'h5', 'h6'];
 const HEADER_TAG_LIST = HEADER_TAGS.join(',');
@@ -50663,7 +50674,7 @@ function markToKeep(article, $, url, tags = []) {
         tags = KEEP_SELECTORS;
     }
     if (url) {
-        const { protocol, hostname } = URL__default["default"].parse(url);
+        const { protocol, hostname } = Url__default["default"].parse(url);
         tags = [...tags, `iframe[src^="${protocol}//${hostname}"]`];
     }
     $(tags.join(','), article).addClass(KEEP_CLASS);
@@ -50931,13 +50942,13 @@ function linkDensity($node) {
 }
 
 // import {
-function removeUnlessContent($node, $, weight) {
+const doesContainContent = ($node, $, weight) => {
     // Explicitly save entry-content-asset tags, which are
     // noted as valuable in the Publisher guidelines. For now
     // this works everywhere. We may want to consider making
     // this less of a sure-thing later.
     if ($node.hasClass('entry-content-asset')) {
-        return;
+        return true;
     }
     const content = normalizeSpaces($node.text());
     if (scoreCommas(content) < 10) {
@@ -50945,24 +50956,21 @@ function removeUnlessContent($node, $, weight) {
         const inputCount = $('input', $node).length;
         // Looks like a form, too many inputs.
         if (inputCount > pCount / 3) {
-            $node.remove();
-            return;
+            return false;
         }
         const contentLength = content.length;
         const imgCount = $('img', $node).length;
         // Content is too short, and there are no images, so
         // this is probably junk content.
         if (contentLength < 25 && imgCount === 0) {
-            $node.remove();
-            return;
+            return false;
         }
         const density = linkDensity($node);
         // Too high of link density, is probably a menu or
         // something similar.
         // console.log(weight, density, contentLength)
         if (weight < 25 && density > 0.2 && contentLength > 75) {
-            $node.remove();
-            return;
+            return false;
         }
         // Too high of a link density, despite the score being
         // high.
@@ -50976,32 +50984,34 @@ function removeUnlessContent($node, $, weight) {
                 const previousNode = $node.prev();
                 if (previousNode &&
                     normalizeSpaces(previousNode.text()).slice(-1) === ':') {
-                    return;
+                    return true;
                 }
             }
-            $node.remove();
-            return;
+            return false;
         }
         const scriptCount = $('script', $node).length;
         // Too many script tags, not enough content.
         if (scriptCount > 0 && contentLength < 150) {
-            $node.remove();
+            return false;
         }
     }
-}
-// Given an article, clean it of some superfluous content specified by
-// tags. Things like forms, ads, etc.
-//
-// Tags is an array of tag name's to search through. (like div, form,
-// etc)
-//
-// Return this same doc.
-function cleanTags($article, $) {
-    $(CLEAN_CONDITIONALLY_TAGS, $article).each((index, node) => {
+    return true;
+};
+/**
+ * Given an article, clean it of some superfluous content specified by
+ * tags. Things like forms, ads, etc.
+ *
+ * Tags is an array of tag name's to search through. (like div, form,
+ * etc)
+ * @returns The modified article
+ */
+const cleanTags = ($article, $) => {
+    const checkIsContentNode = (node) => {
         const $node = $(node);
         // If marked to keep, skip it
-        if ($node.hasClass(KEEP_CLASS) || $node.find(`.${KEEP_CLASS}`).length > 0)
-            return;
+        if ($node.hasClass(KEEP_CLASS) || $node.find(`.${KEEP_CLASS}`).length > 0) {
+            return true;
+        }
         let weight = getScore($node);
         if (!weight) {
             weight = getOrInitScore($node, $);
@@ -51010,14 +51020,22 @@ function cleanTags($article, $) {
         // drop node if its weight is < 0
         if (weight < 0) {
             $node.remove();
+            return false;
         }
-        else {
-            // deteremine if node seems like content
-            removeUnlessContent($node, $, weight);
+        // deteremine if node seems like content
+        if (!doesContainContent($node, $, weight)) {
+            $node.remove();
+            return false;
         }
+        return true;
+    };
+    $(CLEAN_CONDITIONALLY_TAGS_SELECTOR, $article).each((_, node) => {
+        checkIsContentNode(node);
+        // Returning falsy prematurely halts the each
+        return true;
     });
-    return $;
-}
+    return $article;
+};
 
 function cleanHeaders($article, $, title = '') {
     $(HEADER_TAG_LIST, $article).each((index, header) => {
@@ -51070,15 +51088,18 @@ function setAttr(node, attr, val) {
     return node;
 }
 
-function absolutize($, rootUrl, attr) {
-    const baseUrl = $('base').attr('href');
-    $(`[${attr}]`).each((_, node) => {
+function absolutize($, $content, rootUrl, attr) {
+    let baseUrl = $('base').attr('href');
+    if (baseUrl === null || baseUrl === void 0 ? void 0 : baseUrl.startsWith('//')) {
+        baseUrl = undefined;
+    }
+    $(`[${attr}]`, $content).each((_, node) => {
         const attrs = getAttrs(node);
         const url = attrs[attr];
         if (!url)
             return;
-        const absoluteUrl = URL__default["default"].resolve(baseUrl || rootUrl, url);
-        setAttr(node, attr, absoluteUrl);
+        const absoluteUrl = new URL(url, baseUrl || rootUrl);
+        setAttr(node, attr, absoluteUrl.toString());
     });
 }
 function absolutizeSet($, rootUrl, $content) {
@@ -51096,7 +51117,7 @@ function absolutizeSet($, rootUrl, $content) {
                 // a candidate URL cannot start or end with a comma
                 // descriptors are separated from the URLs by unescaped whitespace
                 const parts = candidate.trim().replace(/,$/, '').split(/\s+/);
-                parts[0] = URL__default["default"].resolve(rootUrl, parts[0]);
+                parts[0] = new URL(parts[0], rootUrl).toString();
                 return parts.join(' ');
             });
             const absoluteUrlSet = [...new Set(absoluteCandidates)].join(', ');
@@ -51105,7 +51126,7 @@ function absolutizeSet($, rootUrl, $content) {
     });
 }
 function makeLinksAbsolute($content, $, url) {
-    ['href', 'src'].forEach(attr => absolutize($, url, attr));
+    ['href', 'src'].forEach(attr => absolutize($, $content, url, attr));
     absolutizeSet($, url, $content);
     return $content;
 }
@@ -51216,6 +51237,46 @@ function nodeIsSufficient($node) {
 function isWordpress($) {
     return $(IS_WP_SELECTOR).length > 0;
 }
+
+const cleanWrappingTags = ($node, $) => {
+    const element = $node[0];
+    if (element.type === 'tag') {
+        if (element.children.length < 2 &&
+            CLEAN_WRAPPING_TAGS.includes(element.tagName)) {
+            const child = element.children[0];
+            if (!child) {
+                return $node.remove();
+            }
+            if (child.type === 'text') {
+                return $node.replaceWith(`<div><p>${$node.html()}</p></div>`);
+            }
+            return cleanWrappingTags($node.children(), $);
+        }
+    }
+    else if (element.type === 'text') {
+        return $(element).wrap('p');
+    }
+    return $node;
+};
+
+const newlineRegex = /(\r\n|\n|\r)/gm;
+const stripNewlines = (string) => string.replaceAll(newlineRegex, '');
+
+const stripEmptyTextNodes = ($content, $) => {
+    $content.contents().each((_, element) => {
+        var _a;
+        if (element.type === 'text') {
+            const text = (_a = element.data) !== null && _a !== void 0 ? _a : '';
+            element.data = stripNewlines(text.trim());
+            if (!element.data) {
+                $(element).remove();
+            }
+        }
+        else if (element.type === 'tag') {
+            stripEmptyTextNodes($(element), $);
+        }
+    });
+};
 
 const IS_LINK = new RegExp('https?://', 'i');
 const IMAGE_RE = '.(png|gif|jpe?g)';
@@ -51550,7 +51611,7 @@ const NewYorkerExtractor = {
     selectors: ['h1[class^="ArticleHeader__hed"]', ['meta[name="og:title"]', 'value']]
   },
   author: {
-    selectors: ['div[class^="ArticleContributors"] a[rel="author"]', 'article header div[class*="Byline__multipleContributors"]']
+    selectors: [['article header div[class*="Byline__multipleContributors"] a[rel="author"]'], ['div[class^="ArticleContributors"] a[rel="author"]']]
   },
   content: {
     selectors: ['main[class^="Layout__content"]'],
@@ -54452,6 +54513,7 @@ const GithubComExtractor = {
 
 const WwwRedditComExtractor = {
   domain: 'www.reddit.com',
+  supportedDomains: ['old.reddit.com'],
   title: {
     selectors: ['div[data-test-id="post-content"] h2']
   },
@@ -54492,6 +54554,23 @@ const WwwRedditComExtractor = {
     // The clean selectors will remove anything that matches from
     // the result
     clean: ['.icon']
+  },
+  comment: {
+    topLevel: {
+      selectors: ['.commentarea > div > .comment']
+    },
+    childLevel: {
+      selectors: ['> .child > div > .comment']
+    },
+    author: {
+      selectors: ['.author']
+    },
+    score: {
+      selectors: ['.score']
+    },
+    text: {
+      selectors: ['.usertext-body']
+    }
   }
 };
 
@@ -55192,7 +55271,7 @@ const WiredJpExtractor = {
       'img[data-original]': $node => {
         const dataOriginal = $node.attr('data-original');
         const src = $node.attr('src');
-        const url = URL__default["default"].resolve(src, dataOriginal);
+        const url = Url__default["default"].resolve(src, dataOriginal);
         $node.attr('src', url);
       }
     },
@@ -55422,6 +55501,87 @@ const TimesofindiaIndiatimesComExtractor = {
   }
 };
 
+const findCommentParent = (comments, indentLevel) => {
+    const stack = comments.map(comment => ({ comment, depth: 0 }));
+    while (stack.length > 0) {
+        const { comment, depth } = stack.pop();
+        if (depth === indentLevel - 1) {
+            return comment;
+        }
+        if (comment.children) {
+            stack.push(...comment.children.map(c => ({ comment: c, depth: depth + 1 })));
+        }
+    }
+    return undefined;
+};
+const NewsYcombinatorComExtractor = {
+    domain: 'news.ycombinator.com',
+    title: {
+        selectors: [['#pagespace', 'title']],
+    },
+    author: {
+        selectors: ['.fatitem .hnuser'],
+    },
+    date_published: {
+        selectors: [['.fatitem .age', 'title']],
+    },
+    dek: {
+        selectors: [],
+    },
+    lead_image_url: {
+        selectors: [],
+    },
+    content: {
+        selectors: [['.fatitem tr:nth-of-type(4) td:nth-of-type(2)']],
+        // Is there anything in the content you selected that needs transformed
+        // before it's consumable content? E.g., unusual lazy loaded images
+        transforms: {},
+        // Is there anything that is in the result that shouldn't be?
+        // The clean selectors will remove anything that matches from
+        // the result
+        clean: ['.athing', '.subtext'],
+    },
+    comment: {
+        topLevel: {
+            selectors: [['.comment-tree .comtr tr']],
+        },
+        childLevel: {
+            // selectors: [['.ind', 'indent']],
+            insertTransform: ($, node, newComment, comments) => {
+                var _a, _b;
+                const indentNode = $('.ind', node).first();
+                if (!indentNode) {
+                    return;
+                }
+                const indentLevel = parseInt((_a = indentNode.attr('indent')) !== null && _a !== void 0 ? _a : '0', 10);
+                if (indentLevel === 0) {
+                    // Top level comment
+                    comments.push(newComment);
+                    return;
+                }
+                // Not top level comment. Traverse tree to find where it goes
+                const parent = findCommentParent(comments, indentLevel);
+                if (!parent) {
+                    console.error('Could not find parent for comment. Appending as a top level comment');
+                    comments.push(newComment);
+                    return;
+                }
+                ((_b = parent.children) !== null && _b !== void 0 ? _b : (parent.children = [])).push(newComment);
+            },
+        },
+        author: {
+            selectors: [['.hnuser']],
+        },
+        date: {
+            selectors: [['.age', 'title']],
+        },
+        text: {
+            selectors: [['.comment .commtext']],
+            clean: ['.reply'],
+        },
+    },
+};
+
 var CustomExtractors = /*#__PURE__*/Object.freeze({
     __proto__: null,
     BloggerExtractor: BloggerExtractor,
@@ -55559,7 +55719,8 @@ var CustomExtractors = /*#__PURE__*/Object.freeze({
     BiorxivOrgExtractor: BiorxivOrgExtractor,
     EpaperZeitDeExtractor: EpaperZeitDeExtractor,
     WwwLadbibleComExtractor: WwwLadbibleComExtractor,
-    TimesofindiaIndiatimesComExtractor: TimesofindiaIndiatimesComExtractor
+    TimesofindiaIndiatimesComExtractor: TimesofindiaIndiatimesComExtractor,
+    NewsYcombinatorComExtractor: NewsYcombinatorComExtractor
 });
 
 const allCustomExtractors = CustomExtractors;
@@ -55568,154 +55729,26 @@ const all = Object.keys(CustomExtractors).reduce((acc, key) => {
     return Object.assign(Object.assign({}, acc), mergeSupportedDomains(extractor));
 }, {});
 
-var stringDirection = {};
+const Detectors = {
+    'meta[name="al:ios:app_name"][value="Medium"]': MediumExtractor,
+    'meta[name="generator"][value="blogger"]': BloggerExtractor,
+};
+function detectByHtml($) {
+    const selector = Reflect.ownKeys(Detectors).find(s => $(s).length > 0);
+    return selector ? Detectors[selector] : undefined;
+}
 
-(function (exports) {
-(function(){
-
-  var LTR_MARK = "\u200e",
-      RTL_MARK = "\u200f",
-      LTR = 'ltr', // Left to right direction content
-      RTL = 'rtl', // Right to left direction content
-      BIDI = 'bidi', // Both directions - any and all directions will not be ok
-      NODI = ''; // No direction - any and all directions are ok
-
-  var rtlSciriptRanges = {
-    Hebrew:   ["0590","05FF"],
-    Arabic:   ["0600","06FF"],
-    NKo:      ["07C0","07FF"],
-    Syriac:   ["0700","074F"],
-    Thaana:   ["0780","07BF"],
-    Tifinagh: ["2D30","2D7F"]
-  };
-
-  /*
-   * Gets string direction
-   * @param {string} - String to check for direction
-   * @returns {string} - 'ltr' if given string is left-to-right, 
-   * 'rtl' if it's right-to-left and 'bidi' if it has both types of characters 
-  */
-  function getDirection(string) {
-
-    if(typeof string === 'undefined')
-      throw new Error('TypeError missing argument');
-
-    if(typeof string !== 'string')
-      throw new Error('TypeError getDirection expects strings');
-
-    if(string === '')
-      return NODI;
-      
-    if(string.indexOf(LTR_MARK) > -1 && string.indexOf(RTL_MARK) > -1)
-      return BIDI;
-
-    if(string.indexOf(LTR_MARK) > -1)
-      return LTR;
-
-    if(string.indexOf(RTL_MARK) > -1)
-      return RTL;
-
-    var hasRtl = hasDirectionCharacters(string, RTL);
-    var hasLtr = hasDirectionCharacters(string, LTR);
- 
-    if(hasRtl && hasLtr)
-      return BIDI;
-
-    if(hasLtr)
-      return LTR;
-
-    if(hasRtl)
-      return RTL;
-
-    return NODI;
-  }
-  /**
-   * Determine if a string has characters in right-to-left or left-to-right Unicode blocks
-   * @param {string} string - String to check for characters
-   * @param {string} direction - Direction to check. Either 'ltr' or 'rtl' string
-   * @returns {boolean} - True if given string has direction specific characters, False otherwise
-  */
-  function hasDirectionCharacters(string, direction) {
-    var i, char, range, charIsRtl,
-        hasRtl = false,
-        hasLtr = false,
-        hasDigit = false;
-
-    hasDigit = (string.search(/[0-9]/) > -1);
-
-    // Remove white space and non directional characters
-    string = string.replace(/[\s\n\0\f\t\v\'\"\-0-9\+\?\!]+/gm, '');
-
-    // Loop through each character
-    for(i=0; i<string.length; i++) {
-      char = string.charAt(i);
-
-      // Assume character is not rtl
-      charIsRtl = false;
-
-      // Test each character against all ltr script ranges
-      for (range in rtlSciriptRanges) {
-
-        if (rtlSciriptRanges.hasOwnProperty(range)) {
-
-          if ( isInScriptRange( char,
-            rtlSciriptRanges[range][0],
-            rtlSciriptRanges[range][1]) ){
-
-            // If character is rtl, set rtl flag (hasRtl) for string to true
-            hasRtl = true;
-
-            // Set rtl flag for this character to true
-            charIsRtl = true;
-          }
-        }
-      }
-
-      // If this character is *not* rtl then it is ltr and string has
-      // ltr characters
-      if(charIsRtl === false) {
-        hasLtr = true;
-      }
-    }
-
-    if(direction === RTL)
-      return hasRtl;
-    if(direction === LTR)
-      return hasLtr || (!hasRtl && hasDigit);
-  }
-
-  /**
-   * Checks if a a character is in a Unicode block range
-   * @param {string} char - The character to check. An string with only one character
-   * @param {string} from - Starting Unicode code of block in hexadecimal. Example: "2D30"
-   * @param {string} to - Ending Unicode code of block in hexadecimal. Example: "2F30"
-   * @returns {boolean} - true if char is in range.
-  */
-  function isInScriptRange(char, from, to) {
-    var charCode = char.charCodeAt(0),
-        fromCode = parseInt(from, 16),
-        toCode = parseInt(to, 16);
-
-    return charCode > fromCode && charCode < toCode;
-  }
-
-  /**
-   * Monkey-patch String global object to expose getDirection method
-  */
-   function patchStringPrototype () {
-    String.prototype.getDirection = function() {
-      return getDirection(this.valueOf());
-    };
-  }
-
-  // TODO make it AMD friendly
-  {
-    exports.getDirection = getDirection;
-    exports.patch = patchStringPrototype;
-  }
-
-}).call(commonjsGlobal);
-}(stringDirection));
+function getExtractor(url, parsedUrl, $) {
+    var _a;
+    parsedUrl = parsedUrl || new URL(url);
+    const { hostname } = parsedUrl;
+    const baseDomain = (_a = hostname === null || hostname === void 0 ? void 0 : hostname.split('.').slice(-2).join('.')) !== null && _a !== void 0 ? _a : '';
+    return ((hostname && apiExtractors[hostname]) ||
+        apiExtractors[baseDomain] ||
+        (hostname && all[hostname]) ||
+        all[baseDomain] ||
+        detectByHtml($));
+}
 
 // CLEAN AUTHOR CONSTANTS
 const CLEAN_AUTHOR_RE = /^\s*(posted |written )?by\s*:?\s*(.*)/i;
@@ -61998,7 +62031,8 @@ function cleanDatePublished(dateString, { timezone, format, } = {}) {
 }
 
 // Clean our article content, returning a new, cleaned node.
-function cleanContent(article, { $, title = '', url = '', defaultCleaner = true, }) {
+function cleanContent(content, { $, title = '', url = '', defaultCleaner = true, }) {
+    let article = content;
     // Rewrite the tag name to div if it's a top level node like body or
     // html to avoid later complications with multiple body tags.
     rewriteTopLevel($);
@@ -62028,13 +62062,17 @@ function cleanContent(article, { $, title = '', url = '', defaultCleaner = true,
     // way to detect menus particularly and remove them.
     // Also optionally running, since it can be overly aggressive.
     if (defaultCleaner) {
-        cleanTags(article, $);
+        article = cleanTags(article, $);
+        if (!article) {
+            return undefined;
+        }
     }
     // Remove empty paragraph nodes
     removeEmpty(article, $);
     // Remove unnecessary attributes
     cleanAttributes(article, $);
-    return article;
+    stripEmptyTextNodes(article, $);
+    return cleanWrappingTags(article, $);
 }
 
 var wuzzy = {};
@@ -79752,7 +79790,7 @@ function cleanDomainFromTitle(splitTitle, url) {
     //
     // Strip out the big TLDs - it just makes the matching a bit more
     // accurate. Not the end of the world if it doesn't strip right.
-    const host = (_a = URL__default["default"].parse(url).host) !== null && _a !== void 0 ? _a : '';
+    const host = (_a = Url__default["default"].parse(url).host) !== null && _a !== void 0 ? _a : '';
     const nakedDomain = host.replace(DOMAIN_ENDINGS_RE, '');
     const startSlug = splitTitle[0].toLowerCase().replace(' ', '');
     const startSlugRatio = wuzzy.levenshtein(startSlug, nakedDomain);
@@ -79810,16 +79848,170 @@ function cleanTitle(title, { url, $ }) {
     return normalizeSpaces(stripTags(title, $).trim());
 }
 
-const wrapStringMethodFromCheerio = (func) => (input, ...rest) => func(input.toString(), ...rest);
-const InternalCleaners = {
-    author: wrapStringMethodFromCheerio(cleanAuthor),
-    lead_image_url: wrapStringMethodFromCheerio(cleanImage),
+const cleanComment = (commentDOM, { $, }) => cleanWrappingTags(commentDOM, $);
+
+const InternalStringCleaners = {
+    author: cleanAuthor,
+    lead_image_url: cleanImage,
+    date_published: cleanDatePublished,
+    title: cleanTitle,
     dek: cleanDek,
-    date_published: wrapStringMethodFromCheerio(cleanDatePublished),
-    content: (input, opts) => cleanContent(input, opts).toString(),
-    title: wrapStringMethodFromCheerio(cleanTitle),
 };
-const Cleaners = InternalCleaners;
+const InternalDOMCleaners = {
+    comment: cleanComment,
+    content: cleanContent,
+};
+const StringCleaners = InternalStringCleaners;
+const DOMCleaners = InternalDOMCleaners;
+
+var stringDirection = {};
+
+(function (exports) {
+(function(){
+
+  var LTR_MARK = "\u200e",
+      RTL_MARK = "\u200f",
+      LTR = 'ltr', // Left to right direction content
+      RTL = 'rtl', // Right to left direction content
+      BIDI = 'bidi', // Both directions - any and all directions will not be ok
+      NODI = ''; // No direction - any and all directions are ok
+
+  var rtlSciriptRanges = {
+    Hebrew:   ["0590","05FF"],
+    Arabic:   ["0600","06FF"],
+    NKo:      ["07C0","07FF"],
+    Syriac:   ["0700","074F"],
+    Thaana:   ["0780","07BF"],
+    Tifinagh: ["2D30","2D7F"]
+  };
+
+  /*
+   * Gets string direction
+   * @param {string} - String to check for direction
+   * @returns {string} - 'ltr' if given string is left-to-right, 
+   * 'rtl' if it's right-to-left and 'bidi' if it has both types of characters 
+  */
+  function getDirection(string) {
+
+    if(typeof string === 'undefined')
+      throw new Error('TypeError missing argument');
+
+    if(typeof string !== 'string')
+      throw new Error('TypeError getDirection expects strings');
+
+    if(string === '')
+      return NODI;
+      
+    if(string.indexOf(LTR_MARK) > -1 && string.indexOf(RTL_MARK) > -1)
+      return BIDI;
+
+    if(string.indexOf(LTR_MARK) > -1)
+      return LTR;
+
+    if(string.indexOf(RTL_MARK) > -1)
+      return RTL;
+
+    var hasRtl = hasDirectionCharacters(string, RTL);
+    var hasLtr = hasDirectionCharacters(string, LTR);
+ 
+    if(hasRtl && hasLtr)
+      return BIDI;
+
+    if(hasLtr)
+      return LTR;
+
+    if(hasRtl)
+      return RTL;
+
+    return NODI;
+  }
+  /**
+   * Determine if a string has characters in right-to-left or left-to-right Unicode blocks
+   * @param {string} string - String to check for characters
+   * @param {string} direction - Direction to check. Either 'ltr' or 'rtl' string
+   * @returns {boolean} - True if given string has direction specific characters, False otherwise
+  */
+  function hasDirectionCharacters(string, direction) {
+    var i, char, range, charIsRtl,
+        hasRtl = false,
+        hasLtr = false,
+        hasDigit = false;
+
+    hasDigit = (string.search(/[0-9]/) > -1);
+
+    // Remove white space and non directional characters
+    string = string.replace(/[\s\n\0\f\t\v\'\"\-0-9\+\?\!]+/gm, '');
+
+    // Loop through each character
+    for(i=0; i<string.length; i++) {
+      char = string.charAt(i);
+
+      // Assume character is not rtl
+      charIsRtl = false;
+
+      // Test each character against all ltr script ranges
+      for (range in rtlSciriptRanges) {
+
+        if (rtlSciriptRanges.hasOwnProperty(range)) {
+
+          if ( isInScriptRange( char,
+            rtlSciriptRanges[range][0],
+            rtlSciriptRanges[range][1]) ){
+
+            // If character is rtl, set rtl flag (hasRtl) for string to true
+            hasRtl = true;
+
+            // Set rtl flag for this character to true
+            charIsRtl = true;
+          }
+        }
+      }
+
+      // If this character is *not* rtl then it is ltr and string has
+      // ltr characters
+      if(charIsRtl === false) {
+        hasLtr = true;
+      }
+    }
+
+    if(direction === RTL)
+      return hasRtl;
+    if(direction === LTR)
+      return hasLtr || (!hasRtl && hasDigit);
+  }
+
+  /**
+   * Checks if a a character is in a Unicode block range
+   * @param {string} char - The character to check. An string with only one character
+   * @param {string} from - Starting Unicode code of block in hexadecimal. Example: "2D30"
+   * @param {string} to - Ending Unicode code of block in hexadecimal. Example: "2F30"
+   * @returns {boolean} - true if char is in range.
+  */
+  function isInScriptRange(char, from, to) {
+    var charCode = char.charCodeAt(0),
+        fromCode = parseInt(from, 16),
+        toCode = parseInt(to, 16);
+
+    return charCode > fromCode && charCode < toCode;
+  }
+
+  /**
+   * Monkey-patch String global object to expose getDirection method
+  */
+   function patchStringPrototype () {
+    String.prototype.getDirection = function() {
+      return getDirection(this.valueOf());
+    };
+  }
+
+  // TODO make it AMD friendly
+  {
+    exports.getDirection = getDirection;
+    exports.patch = patchStringPrototype;
+  }
+
+}).call(commonjsGlobal);
+}(stringDirection));
 
 function convertSpans($node, $) {
     if ($node.get(0)) {
@@ -80010,7 +80202,7 @@ const GenericContentExtractor = {
         // Cascade through our extraction-specific opts in an ordered fashion,
         // turning them off as we try to extract content.
         let node = this.getContentNode($, title, url, options);
-        if (nodeIsSufficient(node)) {
+        if (!!node && nodeIsSufficient(node)) {
             return this.cleanAndReturnNode(node, $);
         }
         // We didn't succeed on first pass, one by one disable our
@@ -80020,7 +80212,7 @@ const GenericContentExtractor = {
             options[key] = false;
             $ = cheerio.load(html);
             node = this.getContentNode($, title, url, options);
-            if (nodeIsSufficient(node)) {
+            if (!!node && nodeIsSufficient(node)) {
                 break;
             }
         }
@@ -82821,6 +83013,9 @@ const GenericExcerptExtractor = {
 
 const GenericWordCountExtractor = {
     extract({ content }) {
+        if (!content) {
+            return 0;
+        }
         const $ = cheerio.load(content);
         const $content = $('div').first();
         const text = normalizeSpaces($content.text());
@@ -82964,31 +83159,8 @@ const GenericExtractor = {
     },
 };
 
-const Detectors = {
-    'meta[name="al:ios:app_name"][value="Medium"]': MediumExtractor,
-    'meta[name="generator"][value="blogger"]': BloggerExtractor,
-};
-function detectByHtml($) {
-    const selector = Reflect.ownKeys(Detectors).find(s => $(s).length > 0);
-    return selector ? Detectors[selector] : undefined;
-}
-
-function getExtractor(url, parsedUrl, $) {
-    var _a;
-    all.default;
-    parsedUrl = parsedUrl || new URL(url);
-    const { hostname } = parsedUrl;
-    const baseDomain = (_a = hostname === null || hostname === void 0 ? void 0 : hostname.split('.').slice(-2).join('.')) !== null && _a !== void 0 ? _a : '';
-    return ((hostname && apiExtractors[hostname]) ||
-        apiExtractors[baseDomain] ||
-        (hostname && all[hostname]) ||
-        all[baseDomain] ||
-        detectByHtml($) ||
-        GenericExtractor);
-}
-
 // Remove elements by an array of selectors
-function cleanBySelectors($content, $, { clean }) {
+function cleanBySelectors($content, $, { clean } = {}) {
     if (!clean) {
         return $content;
     }
@@ -82996,7 +83168,7 @@ function cleanBySelectors($content, $, { clean }) {
     return $content;
 }
 // Transform matching elements
-function transformElements($content, $, { transforms, }) {
+function transformElements($content, $, { transforms, } = {}) {
     if (!transforms) {
         return $content;
     }
@@ -83023,46 +83195,67 @@ function transformElements($content, $, { transforms, }) {
     });
     return $content;
 }
-function findMatchingSelector($, selectors, extractHtml, allowMultiple) {
+const buildSelect = ($, relativeToNode) => relativeToNode
+    ? (selector) => selector ? $(selector, relativeToNode) : $(undefined)
+    : (selector) => $(selector);
+const findMatchingSelector = ($, selectors, extractHtml, allowMultiple, relativeToNode) => {
+    const selectorTest = buildSelect($, relativeToNode);
     return selectors.find(selector => {
-        var _a;
         if (Array.isArray(selector)) {
             if (extractHtml) {
                 // Ignore function selectors, if they're present
-                return selector.filter(s => typeof s === 'string').reduce((acc, s) => acc && $(s).length > 0, true);
+                return selector.filter(s => typeof s === 'string').reduce((acc, s) => acc && selectorTest(s).length > 0, true);
             }
             const [s, attr] = selector;
-            return ((allowMultiple || (!allowMultiple && $(s).length === 1)) &&
-                $(s).attr(attr) &&
-                ((_a = $(s).attr(attr)) === null || _a === void 0 ? void 0 : _a.trim()) !== '');
+            const selected = selectorTest(s);
+            return (selected.length > 0 &&
+                (!attr ||
+                    selected
+                        .toArray()
+                        .reduce((acc, element) => { var _a; return acc && !!((_a = $(element).attr(attr)) === null || _a === void 0 ? void 0 : _a.trim()); }, true)));
         }
-        return ((allowMultiple || (!allowMultiple && $(selector).length === 1)) &&
-            $(selector).text().trim() !== '');
+        return ((allowMultiple || selectorTest(selector).length === 1) &&
+            selectorTest(selector).text().trim() !== '');
     });
-}
-function select(opts) {
-    const { $, type, extractionOpts, extractHtml = false } = opts;
+};
+/**
+ * Mutates passed node with any transforms and cleans tags and text.
+ *
+ * **NOTE:** Make sure to `.clone` if mutation will cause problems
+ */
+const transformAndClean = ($, $node, url, extractionOpts) => {
+    makeLinksAbsolute($node, $, url);
+    cleanBySelectors($node, $, extractionOpts);
+    transformElements($node, $, extractionOpts);
+    return $node;
+};
+// Exported for tests only
+const select = (opts, root) => {
+    const { $, type, extractionOpts, extractHtml = false, allowConcatination, } = opts;
     // Skip if there's not extraction for this type
     if (!extractionOpts) {
-        return undefined;
+        return {
+            type: 'error',
+        };
     }
     // If a string is hardcoded for a type (e.g., Wikipedia
     // contributors), return the string
     if (typeof extractionOpts === 'string') {
-        return extractionOpts;
+        return {
+            type: 'content',
+            content: extractionOpts,
+        };
     }
     const { selectors, defaultCleaner = true, allowMultiple } = extractionOpts;
-    const matchingSelector = findMatchingSelector($, selectors !== null && selectors !== void 0 ? selectors : [], extractHtml, allowMultiple);
+    const matchingSelector = findMatchingSelector($, selectors !== null && selectors !== void 0 ? selectors : [], extractHtml, allowMultiple, root);
     if (!matchingSelector) {
-        return undefined;
+        return {
+            type: 'error',
+        };
     }
-    function transformAndClean($node) {
-        makeLinksAbsolute($node, $, opts.url || '');
-        cleanBySelectors($node, $, extractionOpts);
-        transformElements($node, $, extractionOpts);
-        return $node;
-    }
-    function selectHtml() {
+    const boundTransformAndClean = ($node) => transformAndClean($, $node, opts.url, extractionOpts);
+    const $select = buildSelect($, root);
+    const selectHtml = () => {
         // If the selector type requests html as its return type
         // transform and clean the element with provided selectors
         let $content;
@@ -83071,32 +83264,58 @@ function select(opts) {
         // selectors to include in the result. Note that all selectors in the
         // array must match in order for this selector to trigger
         if (Array.isArray(matchingSelector)) {
-            $content = $(matchingSelector.join(','));
+            $content = $select(matchingSelector.join(','));
             const $wrapper = $('<div></div>');
             $content.each((_, element) => {
-                // TODO: What's up with this cast?
-                $wrapper.append(element);
+                // TODO: Cheerio doesn't list cheerio.Element as an appendable type
+                $wrapper.append($(element));
             });
             $content = $wrapper;
         }
         else {
-            $content = $(matchingSelector);
+            $content = $select(matchingSelector);
+            // Wrap in div so transformation can take place on root element
+            if ($content.toArray().length > 1) {
+                // Limit to first element
+                $content = $($content.toArray()[0]);
+            }
+            $content.wrap($('<div></div>'));
+            $content = $content.parent();
         }
-        // Wrap in div so transformation can take place on root element
-        $content.wrap($('<div></div>'));
-        $content = $content.parent();
-        $content = transformAndClean($content);
-        if (type in Cleaners) {
-            Cleaners[type]($content, Object.assign(Object.assign({}, opts), { defaultCleaner }));
+        $content = boundTransformAndClean($content);
+        if (type in DOMCleaners) {
+            $content = DOMCleaners[type]($content, Object.assign(Object.assign({}, opts), { defaultCleaner }));
+        }
+        if (!$content) {
+            return {
+                type: 'content',
+                content: undefined,
+            };
         }
         if (allowMultiple) {
-            return $content
-                .children()
-                .toArray()
-                .map(el => $.html($(el)));
+            return {
+                type: 'content',
+                content: $content
+                    .children()
+                    .toArray()
+                    .map(el => $.html($(el))),
+            };
         }
-        return $.html($content);
-    }
+        // return $content.children().first().html() ?? undefined;
+        const array = $content.children().toArray();
+        if (array.length === 1) {
+            // Not allowMultiple. Return first element
+            return {
+                type: 'content',
+                content: $.html(array[0]),
+            };
+        }
+        // Return full content node
+        return {
+            type: 'content',
+            content: $.html($content),
+        };
+    };
     if (extractHtml) {
         return selectHtml();
     }
@@ -83106,29 +83325,64 @@ function select(opts) {
     // extract the attr
     if (Array.isArray(matchingSelector)) {
         const [selector, attr, transform] = matchingSelector;
-        $match = $(selector);
-        $match = transformAndClean($match);
-        result = $match.map((_, el) => {
-            var _a, _b;
-            const item = (_b = (_a = $(el).attr(attr)) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : '';
-            return transform ? transform(item) : item;
+        $match = $select(selector);
+        const $wrapper = $('<div></div>');
+        $match.each((_, element) => {
+            // TODO: Cheerio doesn't list cheerio.Element as an appendable type
+            $wrapper.append($(element));
         });
+        $match = $wrapper;
+        $match = boundTransformAndClean($match);
+        if (attr || transform) {
+            result = $match.children().map((_, el) => {
+                var _a, _b;
+                const item = attr
+                    ? (_b = (_a = $(el).attr(attr)) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : ''
+                    : $(el).text().trim();
+                return transform ? transform(item) : item;
+            });
+        }
+        else {
+            result = $match.children().map((_, el) => $(el).text().trim());
+        }
     }
     else {
-        $match = $(matchingSelector);
-        $match = transformAndClean($match);
+        $match = $select(matchingSelector);
+        $match.wrap($('<div></div>'));
+        $match = $match.parent();
+        $match = boundTransformAndClean($match);
         result = $match.map((_, el) => $(el).text().trim());
     }
     const finalResult = Array.isArray(result.toArray()) && allowMultiple
         ? result.toArray()
-        : result[0];
+        : allowConcatination
+            ? result.toArray().join(', ')
+            : result[0];
     // Allow custom extractor to skip default cleaner
     // for this type; defaults to true
-    if (defaultCleaner && type in Cleaners) {
-        return Cleaners[type](finalResult, Object.assign(Object.assign({}, opts), extractionOpts));
+    if (defaultCleaner && type in StringCleaners) {
+        const cleanedString = StringCleaners[type](finalResult, Object.assign(Object.assign({}, opts), extractionOpts));
+        return {
+            type: 'content',
+            content: cleanedString,
+        };
     }
-    return finalResult;
-}
+    return {
+        type: 'content',
+        content: finalResult,
+    };
+};
+const selectConcatinating = (opts, root) => {
+    const result = select(opts, root);
+    if (result.type === 'error') {
+        return result;
+    }
+    const { content } = result;
+    return {
+        type: 'content',
+        content: Array.isArray(content) ? content.join(',') : content,
+    };
+};
 function selectExtendedTypes(extend, opts) {
     const results = {};
     Reflect.ownKeys(extend).forEach(t => {
@@ -83136,8 +83390,8 @@ function selectExtendedTypes(extend, opts) {
         if (!results[type]) {
             // TODO: This cast isn't safe. Maybe add a generic for addition extended types
             const selectedData = select(Object.assign(Object.assign({}, opts), { type: type, extractionOpts: extend[type] }));
-            if (selectedData) {
-                results[type] = selectedData;
+            if (selectedData.type === 'content' && selectedData.content) {
+                results[type] = selectedData.content;
             }
         }
     });
@@ -83147,8 +83401,10 @@ function extractResult(opts) {
     const { type, extractor, fallback = true } = opts;
     const result = select(Object.assign(Object.assign({}, opts), { extractionOpts: extractor[type] }));
     // If custom parser succeeds, return the result
-    if (result) {
-        return result;
+    // A return value of undefined means that the parser successfully selected nothing
+    // TODO: Maybe indicate better than using undefined
+    if (result.type === 'content') {
+        return result.content;
     }
     // If nothing matches the selector, and fallback is enabled,
     // run the Generic extraction
@@ -83157,36 +83413,131 @@ function extractResult(opts) {
     }
     return undefined;
 }
+const selectionResultString = (result) => result.type === 'content' && result.content
+    ? stripNewlines(normalizeSpaces(result.content))
+    : undefined;
+const selectNestedComments = (opts) => {
+    const { html, extractionOpts } = opts;
+    // Skip if there's not extraction for this type
+    if (!extractionOpts) {
+        return undefined;
+    }
+    const { selectors, allowMultiple } = extractionOpts.topLevel;
+    const $ = cheerio.load(html);
+    const matchingSelector = findMatchingSelector($, selectors !== null && selectors !== void 0 ? selectors : [], true, allowMultiple);
+    if (!matchingSelector) {
+        return undefined;
+    }
+    const comments = [];
+    // Always extractHtml
+    const getComment = (node) => {
+        var _a, _b, _c;
+        const nodeTransformer = (_a = extractionOpts.childLevel) === null || _a === void 0 ? void 0 : _a.nodeTransform;
+        if (nodeTransformer) {
+            nodeTransformer($, node, comments);
+        }
+        const text = selectConcatinating(Object.assign(Object.assign({}, opts), { type: 'content', extractionOpts: extractionOpts.text }), node);
+        if (!text) {
+            return undefined;
+        }
+        const author = selectConcatinating(Object.assign(Object.assign({}, opts), { 
+            // TODO: Add proper type for cleaning
+            type: 'comment', extractionOpts: extractionOpts.author }), node);
+        const score = selectConcatinating(Object.assign(Object.assign({}, opts), { 
+            // TODO: Add proper type for cleaning
+            type: 'comment', extractionOpts: extractionOpts.score }), node);
+        const comment = {
+            author: selectionResultString(author),
+            score: selectionResultString(score),
+            text: (_b = selectionResultString(text)) !== null && _b !== void 0 ? _b : '',
+        };
+        const insertTransformer = (_c = extractionOpts.childLevel) === null || _c === void 0 ? void 0 : _c.insertTransform;
+        if (insertTransformer) {
+            insertTransformer($, node, comment, comments);
+        }
+        return {
+            comment,
+            append: !insertTransformer,
+        };
+    };
+    const createCommentBuilder = (commentGroup, childExtractionOpts) => (element) => {
+        const commentWrapper = getComment(element);
+        if (!commentWrapper) {
+            return;
+        }
+        const { comment: newComment, append } = commentWrapper;
+        if (append) {
+            commentGroup.push(newComment);
+        }
+        // Process children
+        if (childExtractionOpts) {
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            processCommentChildren(element, newComment, childExtractionOpts);
+        }
+    };
+    const processCommentChildren = (node, comment, childExtractionOpts) => {
+        var _a, _b;
+        const childMatchingSelector = findMatchingSelector($, (_a = childExtractionOpts === null || childExtractionOpts === void 0 ? void 0 : childExtractionOpts.selectors) !== null && _a !== void 0 ? _a : [], true, childExtractionOpts === null || childExtractionOpts === void 0 ? void 0 : childExtractionOpts.allowMultiple, node);
+        const childSelector = Array.isArray(childMatchingSelector)
+            ? childMatchingSelector.join(',')
+            : childMatchingSelector;
+        if (!childSelector) {
+            return;
+        }
+        const commentBuilder = createCommentBuilder(((_b = comment.children) !== null && _b !== void 0 ? _b : (comment.children = [])), childExtractionOpts);
+        $(childSelector, node).each((_, element) => commentBuilder(element));
+    };
+    const commentBuilder = createCommentBuilder(comments, extractionOpts.childLevel);
+    const $content = $(Array.isArray(matchingSelector)
+        ? matchingSelector.join(',')
+        : matchingSelector);
+    $content.each((_, element) => commentBuilder(element));
+    // TODO: Run cleaners?
+    return comments;
+};
+const extractCommentResult = (opts) => {
+    const { extractor } = opts;
+    const commentOptions = extractor.comment;
+    if (!commentOptions) {
+        // TODO: Fallback to generic extractor?
+        return undefined;
+    }
+    const result = selectNestedComments(Object.assign(Object.assign({}, opts), { extractionOpts: commentOptions }));
+    return result;
+};
 const RootExtractor = {
     extract(extractor, opts) {
+        var _a;
         const { contentOnly, extractedTitle } = opts;
         // This is the generic extractor. Run its extract method
         if (!extractor) {
             return Object.assign({ type: 'full' }, GenericExtractor.extract(opts));
         }
         const selectionOptions = Object.assign(Object.assign({}, opts), { extractor });
+        const { url, domain } = (_a = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'url_and_domain' }))) !== null && _a !== void 0 ? _a : { url: undefined, domain: undefined };
         if (contentOnly) {
             const content = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'content', extractHtml: true, title: extractedTitle }));
             const next_page_url = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'next_page_url' }));
             return {
                 type: 'contentOnly',
+                url,
+                domain,
                 content,
                 next_page_url,
             };
         }
         const title = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'title' }));
         const date_published = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'date_published' }));
-        const author = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'author' }));
+        const author = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'author', allowConcatination: true }));
         const next_page_url = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'next_page_url' }));
         const content = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'content', extractHtml: true, title }));
-        const comments = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'comment', extractHtml: true }));
+        const comments = extractCommentResult(Object.assign(Object.assign({}, selectionOptions), { extractHtml: true }));
         const lead_image_url = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'lead_image_url', content }));
         const excerpt = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'excerpt', content }));
         const dek = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'dek', content,
             excerpt }));
         const word_count = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'word_count', content }));
         const direction = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'direction', title }));
-        const { url, domain } = extractResult(Object.assign(Object.assign({}, selectionOptions), { type: 'url_and_domain' })) || { url: null, domain: null };
         let extendedResults = {};
         if (extractor.extend) {
             extendedResults = selectExtendedTypes(extractor.extend, selectionOptions);

@@ -96,6 +96,8 @@ export interface ExtractResultOptions<T extends DefaultContentType>
   type: T;
   extractor: CustomExtractor;
   title?: string;
+
+  allowConcatination?: boolean;
 }
 
 export interface SelectedExtractOptions<T = InnerExtractorOptions | string> {
@@ -104,6 +106,7 @@ export interface SelectedExtractOptions<T = InnerExtractorOptions | string> {
   url: string;
   type: DefaultContentType;
   extractionOpts?: T;
+  allowConcatination?: boolean;
 
   extractHtml?: boolean;
 }
@@ -112,8 +115,8 @@ export type CleanerOptions = SelectedExtractOptions & InnerExtractorOptions;
 
 export type Selector =
   | string
-  | [string, string]
-  | [string, string, (item: string) => string];
+  | [string, string?]
+  | [string, string?, ((item: string) => string)?];
 
 export interface Extend {
   [Key: string]: InnerExtractorOptions;
@@ -126,19 +129,41 @@ export interface Comment {
   children?: Comment[];
 }
 
-export interface ExtractorResult {
-  next_page_url?: string;
+export type SelectionResult =
+  | {
+      type: 'content';
+      content: string | string[] | undefined;
+    }
+  | {
+      type: 'error';
+    };
 
-  title: string;
+export type ConcatenatedSelectionResult =
+  | {
+      type: 'content';
+      content: string | undefined;
+    }
+  | {
+      type: 'error';
+    };
+
+interface BaseExtractorResult {
+  url: string;
+  domain?: string;
+
   content?: string;
+
+  next_page_url?: string;
+}
+
+export interface ExtractorResult extends BaseExtractorResult {
+  title: string;
   comments?: Comment[];
   author?: string;
   date_published?: string;
   // This doesn't need to be in this type
   dek?: undefined;
   lead_image_url?: string;
-  url: string;
-  domain?: string;
   excerpt: string;
   word_count: number;
   direction: 'ltr' | 'rtl';
@@ -148,9 +173,6 @@ export interface FullExtractorResult extends ExtractorResult {
   type: 'full';
 }
 
-export interface ContentExtractorResult {
+export interface ContentExtractorResult extends BaseExtractorResult {
   type: 'contentOnly';
-  content?: string;
-
-  next_page_url?: string;
 }

@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -100,13 +100,13 @@ describe('WwwPublickey1JpExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 5);
+      const first13 = excerptDomContent($, 5);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        '2019年4月4日 米インテルは4月2日、イベント「Data-Centric Innovation Day」を開催。データセンター向けに1ペタバイトの容量を持つSSD「Intel SSD'
+        '2019年4月4日 米インテルは4月2日、イベント「 Data-Centric Innovation Day'
       );
     });
   });

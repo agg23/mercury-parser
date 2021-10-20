@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -97,13 +97,13 @@ describe('WwwLifehackerJpExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 2);
+      const first13 = excerptDomContent($, 5);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        'Image: Amazon.co.jpついつい溜めてしまい、気がつくとかさばって捨てるのにも苦労する新聞紙。そんな新聞紙を捨てる時には、ファインの｢新聞ストッカー｣が役に立ちます。新聞紙を簡単に、くるくるっとテープでまけちゃうんです。Image:'
+        'Image: Amazon.co.jp ついつい溜めてしまい、気がつくとかさばって捨てるのにも苦労する 新聞紙 。'
       );
     });
   });

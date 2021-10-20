@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -84,13 +84,13 @@ describe('WwwEonlineComExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        "Ryan Gosling's most cherished role won't win him any Hollywood awards.With his musical"
+        "Ryan Gosling 's most cherished role won't win him any Hollywood awards. With"
       );
     });
   });

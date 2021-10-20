@@ -5,7 +5,7 @@ import moment from 'moment';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -65,6 +65,7 @@ describe('GeniusComExtractor', () => {
 
       // Update these values with the expected values from
       // the article.
+      // TODO: Mutation by date_published is killing this meta node
       assert.equal(
         lead_image_url,
         `https://images.genius.com/da3381a38218928924c94db9ea59543b.1000x1000x1.jpg`
@@ -80,7 +81,7 @@ describe('GeniusComExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.

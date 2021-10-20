@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 
 import { parse } from 'mercury';
 import { getExtractor } from 'extractors/get-extractor';
-import { excerptContent } from 'utils/text';
+import { excerptDomContent } from 'utils/text';
 
 const fs = require('fs');
 
@@ -90,13 +90,13 @@ describe('BlisterreviewComExtractor', () => {
 
       const $ = cheerio.load(content || '');
 
-      const first13 = excerptContent($('*').first().text(), 13);
+      const first13 = excerptDomContent($, 13);
 
       // Update these values with the expected values from
       // the article.
       assert.equal(
         first13,
-        'Ski: 2019-2020 Line Outline, 186 cmAvailable Lengths: 178, 186 cmBlister’s Measured Tip-to-Tail Length:'
+        'Ski: 2019-2020 Line Outline, 186 cm Available Lengths: 178, 186 cm Blister’s Measured'
       );
     });
   });
