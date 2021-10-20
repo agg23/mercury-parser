@@ -1,7 +1,7 @@
 import cheerio from 'cheerio';
 import assert from 'assert';
 
-import { assertClean } from 'test-helpers';
+import { assertClean, stripCheerioWrapper } from 'test-helpers';
 
 import HTML from './fixtures/html';
 import { markToKeep } from './index';
@@ -16,7 +16,7 @@ describe('markToKeep($)', () => {
     assert.equal(result('iframe.mercury-parser-keep').length, 2);
 
     if (!$.browser) {
-      assertClean(result.html(), HTML.marksYouTube.after);
+      assertClean(stripCheerioWrapper(result), HTML.marksYouTube.after);
     }
   });
 
@@ -28,6 +28,6 @@ describe('markToKeep($)', () => {
     const result = markToKeep($('*').first(), $, 'https://medium.com/foo');
 
     const keptHtml = `<div><iframe src="https://medium.com/foo/bar" class="${KEEP_CLASS}"></iframe></div>`;
-    assertClean(result.html(), keptHtml);
+    assertClean(stripCheerioWrapper(result), keptHtml);
   });
 });

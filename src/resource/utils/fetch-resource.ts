@@ -64,7 +64,7 @@ export function baseDomain({ host }: { host: string }) {
 
 export type SuccessResult = {
   type: 'success';
-  body: Buffer | string;
+  body: Buffer;
   headers: Headers;
 };
 

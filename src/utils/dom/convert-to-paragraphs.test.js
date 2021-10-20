@@ -1,13 +1,13 @@
 import cheerio from 'cheerio';
 
-import { assertClean } from 'test-helpers';
+import { assertClean, stripCheerioWrapper } from 'test-helpers';
 import HTML from './fixtures/html';
 
 import { convertToParagraphs } from './convert-to-paragraphs';
 
 function assertBeforeAndAfter(key, fn) {
   const $ = cheerio.load(HTML[key].before);
-  assertClean(fn($).html(), HTML[key].after);
+  assertClean(stripCheerioWrapper(fn($)), HTML[key].after);
 }
 
 describe('convertToParagraphs($)', () => {
@@ -30,6 +30,6 @@ describe('convertToParagraphs($)', () => {
       </div>
     `;
     const $ = cheerio.load(html);
-    assertClean(convertToParagraphs($).html(), html);
+    assertClean(stripCheerioWrapper(convertToParagraphs($)), html);
   });
 });

@@ -3,8 +3,6 @@ import nock from 'nock'; // eslint-disable-line import/no-extraneous-dependencie
 import path from 'path';
 import cheerio from 'cheerio';
 
-// const fs = require('fs');
-
 export function clean(string) {
   return string
     .trim()
@@ -15,6 +13,9 @@ export function clean(string) {
 export function assertClean(a, b) {
   assert.equal(clean(a), clean(b));
 }
+
+export const stripCheerioWrapper = ($, input, selector = 'body') =>
+  input ? $(selector, input).html().trim() : $(selector).html().trim();
 
 // using this from https://www.ctl.io/developers/blog/post/http-apis-test-code
 export function record(name, options = {}) {

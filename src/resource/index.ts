@@ -20,7 +20,7 @@ const Resource = {
   // :param headers: Custom headers to be included in the request
   async create(
     url: string,
-    preparedResponse?: Buffer | string,
+    preparedResponse?: Buffer,
     parsedUrl?: URL,
     headers: Record<string, string> = {}
   ) {
@@ -60,7 +60,10 @@ const Resource = {
 
     let $ = this.encodeDoc({ content: body, contentType });
 
-    if ($.root().children().length === 0) {
+    if (
+      $.root().children().length === 0 ||
+      ($('head').children().length === 0 && $('body').children().length === 0)
+    ) {
       throw new Error('No children, likely a bad parse.');
     }
 
@@ -75,11 +78,11 @@ const Resource = {
     content,
     contentType,
   }: {
-    content: Buffer | string;
+    content: Buffer;
     contentType: string;
   }): cheerio.Root {
     const encoding = getEncoding(contentType);
-    let decodedContent = iconv.decode(content as Buffer, encoding);
+    let decodedContent = iconv.decode(content, encoding);
     let $ = cheerio.load(decodedContent);
 
     // after first cheerio.load, check to see if encoding matches
@@ -93,7 +96,7 @@ const Resource = {
 
     // if encodings in the header/body dont match, use the one in the body
     if (metaContentType && properEncoding !== encoding) {
-      decodedContent = iconv.decode(content as Buffer, properEncoding);
+      decodedContent = iconv.decode(content, properEncoding);
       $ = cheerio.load(decodedContent);
     }
 

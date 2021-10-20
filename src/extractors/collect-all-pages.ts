@@ -14,7 +14,7 @@ export async function collectAllPages({
   title,
   url,
 }: ExtractorOptions & {
-  extractor: CustomExtractor;
+  extractor: CustomExtractor | undefined;
   result: ExtractorResult;
   next_page_url?: string;
   title: string;

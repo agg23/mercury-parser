@@ -102,7 +102,7 @@ describe('transformElements($content, $, { transforms })', () => {
     const opts = {
       transforms: {
         noscript: ($node, $) => {
-          const $children = $.browser ? $($node.text()) : $node.children();
+          const $children = $($node.text().trim());
           if (
             $children.length === 1 &&
             $children.get(0) !== undefined &&

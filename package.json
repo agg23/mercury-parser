@@ -46,6 +46,7 @@
     "test:build": "jest ./scripts/check-build.test.js",
     "test:build:web": "node ./scripts/proxy-browser-test.js",
     "watch:test": "jest --watch",
+    "watch:test:core": "jest --watch --testPathIgnorePatterns=/src/extractors/custom/",
     "generate-parser": "ts-node ./scripts/generate-custom-parser.ts"
   },
   "engines": {
@@ -127,12 +128,12 @@
   },
   "dependencies": {
     "@postlight/ci-failed-test-reporter": "^1.0",
-    "cheerio": "^0.22.0",
+    "cheerio": "^1.0.0-rc.10",
     "cross-fetch": "^3.1.4",
     "difflib": "github:postlight/difflib.js",
     "ellipsize": "0.1.0",
     "iconv-lite": "0.5.0",
-    "jquery": "3.4.1",
+    "jquery": "^3.6.0",
     "moment": "2.23.0",
     "moment-parseformat": "3.0.0",
     "moment-timezone": "0.5.26",
@@ -147,9 +148,6 @@
     "moment-timezone",
     "browser-request"
   ],
-  "resolutions": {
-    "htmlparser2": "^4.0.0"
-  },
   "jest": {
     "moduleNameMapper": {
       "mercury": "<rootDir>/src/mercury",

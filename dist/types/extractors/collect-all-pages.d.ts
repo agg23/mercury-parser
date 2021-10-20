@@ -1,6 +1,6 @@
 import { CustomExtractor, ExtractorOptions, ExtractorResult } from './types';
 export declare function collectAllPages({ next_page_url, html, $: $incoming, metaCache, result, extractor, title, url, }: ExtractorOptions & {
-    extractor: CustomExtractor;
+    extractor: CustomExtractor | undefined;
     result: ExtractorResult;
     next_page_url?: string;
     title: string;

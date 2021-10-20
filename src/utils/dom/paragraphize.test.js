@@ -1,7 +1,7 @@
 import assert from 'assert';
 import cheerio from 'cheerio';
 
-import { clean } from 'test-helpers';
+import { clean, stripCheerioWrapper } from 'test-helpers';
 import HTML from './fixtures/html';
 import { paragraphize } from './index';
 
@@ -12,7 +12,7 @@ describe('Generic Extractor Utils', () => {
       const node = $('br').get(0);
 
       // note: result here is not valid html; will handle elsewhere
-      const result = paragraphize(node, $, true).html();
+      const result = stripCheerioWrapper(paragraphize(node, $, true));
 
       assert.equal(clean(result), clean(HTML.paragraphize.after));
     });
@@ -22,7 +22,7 @@ describe('Generic Extractor Utils', () => {
       const node = $('br').get(0);
 
       // note: result here is not valid html; will handle elsewhere
-      const result = paragraphize(node, $, true).html();
+      const result = stripCheerioWrapper(paragraphize(node, $, true));
 
       // small quirks in how jquery handles this vs. cheerio
       const html =

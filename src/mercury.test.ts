@@ -25,7 +25,7 @@ describe('Mercury', () => {
       )) as Result;
 
       assert.equal(result.type, 'full');
-      assert.equal(result.content.indexOf('score="') === -1, true);
+      assert.equal(result.content!.indexOf('score="') === -1, true);
     });
 
     it('returns an error on non-200 responses', async () => {

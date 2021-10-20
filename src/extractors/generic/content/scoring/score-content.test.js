@@ -43,7 +43,7 @@ describe('scoreContent($, weightNodes)', () => {
 
     // fuzzines of test below addressing minor
     // discrepancy b/w node and browser
-    assert.equal(getScore(itemprop) > 500, true);
+    assert.equal(getScore(itemprop) > 450, true);
   });
 
   it('gives its parent all of the children scores', () => {
@@ -76,12 +76,7 @@ describe('scoreContent($, weightNodes)', () => {
     let $ = cheerio.load(html);
     $ = scoreContent($);
 
-    assert.equal(
-      $('p')
-        .first()
-        .attr('score'),
-      '5'
-    );
+    assert.equal($('p').first().attr('score'), '5');
     assert.equal($('div div').attr('score'), '30');
   });
 });

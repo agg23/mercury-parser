@@ -236,7 +236,7 @@ const HTML = {
     <html><body><div><p><a href="">Wow how about that</a></p></div></body></html>
     `,
     after: `
-    <div><div><div><p><a href>Wow how about that</a></p></div></div></div>
+    <div><div><p><a href="">Wow how about that</a></p></div></div>
     `,
   },
 
@@ -332,8 +332,8 @@ const HTML = {
     after: `
     <div>
       <p>What an article</p>
-      <iframe src="https://www.youtube.com/embed/_2AqQV8wDvY" frameborder="0" allowfullscreen class="mercury-parser-keep"></iframe>
-      <iframe src="foo" frameborder="0" allowfullscreen></iframe>
+      <iframe src="https://www.youtube.com/embed/_2AqQV8wDvY" frameborder="0" allowfullscreen="" class="mercury-parser-keep"></iframe>
+      <iframe src="foo" frameborder="0" allowfullscreen=""></iframe>
       <iframe src="https://player.vimeo.com/video/57712615" class="mercury-parser-keep"></iframe>
     </div>
     `,
@@ -703,4 +703,18 @@ const HTML = {
   },
 };
 
-export default HTML;
+const recursiveTrim = <T extends Record<string, any> | string>(input: T): T => {
+  if (typeof input === 'string') {
+    return input.trim() as T;
+  }
+
+  const output: Record<string, any> = {};
+
+  for (const key of Object.keys(input)) {
+    output[key] = recursiveTrim(input[key]);
+  }
+
+  return output as T;
+};
+
+export default recursiveTrim(HTML);

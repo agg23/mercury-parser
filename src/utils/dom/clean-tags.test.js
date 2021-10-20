@@ -1,6 +1,6 @@
 import cheerio from 'cheerio';
 
-import { assertClean } from 'test-helpers';
+import { assertClean, stripCheerioWrapper } from 'test-helpers';
 
 import HTML from './fixtures/html';
 import { cleanTags } from './index';
@@ -10,7 +10,7 @@ describe('cleanTags($)', () => {
     const $ = cheerio.load(HTML.dropNegativeScore.before);
 
     const result = cleanTags($('*').first(), $);
-    assertClean($.html(result), HTML.dropNegativeScore.after);
+    assertClean(stripCheerioWrapper($, result), HTML.dropNegativeScore.after);
   });
 
   it('removes a node with too many inputs', () => {
@@ -19,7 +19,7 @@ describe('cleanTags($)', () => {
     const result = cleanTags($('*').first(), $);
     $('[score]').each((i, e) => $(e).removeAttr('score'));
 
-    assertClean($.html(result), HTML.removeTooManyInputs.after);
+    assertClean(stripCheerioWrapper($, result), HTML.removeTooManyInputs.after);
   });
 
   it('removes a div with no images and very little text', () => {
@@ -28,7 +28,7 @@ describe('cleanTags($)', () => {
     const result = cleanTags($('*').first(), $);
     $('[score]').each((i, e) => $(e).removeAttr('score'));
 
-    assertClean($.html(result), HTML.removeShortNoImg.after);
+    assertClean(stripCheerioWrapper($, result), HTML.removeShortNoImg.after);
   });
 
   it('removes a node with a link density that is too high', () => {
@@ -37,7 +37,7 @@ describe('cleanTags($)', () => {
     const result = cleanTags($('*').first(), $);
     $('[score]').each((i, e) => $(e).removeAttr('score'));
 
-    assertClean($.html(result), HTML.linkDensityHigh.after);
+    assertClean(stripCheerioWrapper($, result), HTML.linkDensityHigh.after);
   });
 
   it('removes a node with a good score but link density > 0.5', () => {
@@ -46,20 +46,26 @@ describe('cleanTags($)', () => {
     const result = cleanTags($('*').first(), $);
     $('[score]').each((i, e) => $(e).removeAttr('score'));
 
-    assertClean($.html(result), HTML.linkDensityHigh.after);
+    assertClean(stripCheerioWrapper($, result), HTML.linkDensityHigh.after);
   });
 
   it('keeps node with a good score but link density > 0.5 if preceding text ends in colon', () => {
     const $ = cheerio.load(HTML.previousEndsInColon.before);
 
     const result = cleanTags($('*').first(), $);
-    assertClean($.html(result), HTML.previousEndsInColon.before);
+    assertClean(
+      stripCheerioWrapper($, result),
+      HTML.previousEndsInColon.before
+    );
   });
 
   it('keeps anything with a class of entry-content-asset', () => {
     const $ = cheerio.load(HTML.cleanEntryContentAsset.before);
 
     const result = cleanTags($('*').first(), $);
-    assertClean($.html(result), HTML.cleanEntryContentAsset.before);
+    assertClean(
+      stripCheerioWrapper($, result),
+      HTML.cleanEntryContentAsset.before
+    );
   });
 });

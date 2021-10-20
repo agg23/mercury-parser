@@ -5,7 +5,7 @@ export declare function baseDomain({ host }: {
 }): string;
 export declare type SuccessResult = {
     type: 'success';
-    body: Buffer | string;
+    body: Buffer;
     headers: Headers;
 };
 export declare type ErrorResult = {

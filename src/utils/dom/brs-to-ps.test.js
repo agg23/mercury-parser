@@ -1,20 +1,20 @@
 import assert from 'assert';
 import cheerio from 'cheerio';
 
-import { assertClean } from 'test-helpers';
+import { assertClean, stripCheerioWrapper } from 'test-helpers';
 import HTML from './fixtures/html';
 import { brsToPs } from './brs-to-ps';
 
 function assertBeforeAndAfter(key, fn) {
   const $ = cheerio.load(HTML[key].before);
-  assertClean(fn($).html(), HTML[key].after);
+  assertClean(stripCheerioWrapper(fn($)), HTML[key].after);
 }
 
 describe('Generic Extractor Utils', () => {
   describe('brsToPs(node)', () => {
     it('does nothing when no BRs present', () => {
       const $ = cheerio.load(HTML.positiveId);
-      assert.equal(brsToPs($).html(), HTML.positiveId);
+      assert.equal(stripCheerioWrapper(brsToPs($)), HTML.positiveId);
     });
 
     it('does nothing when a single BR is present', () => {

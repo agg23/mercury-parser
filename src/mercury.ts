@@ -41,7 +41,12 @@ export const parse = async (
     };
   }
 
-  const resource = await Resource.create(url, html, parsedUrl, headers);
+  const resource = await Resource.create(
+    url,
+    html ? Buffer.from(html) : undefined,
+    parsedUrl,
+    headers
+  );
 
   // If we found an error creating the resource, return that error
   if ('type' in resource) {

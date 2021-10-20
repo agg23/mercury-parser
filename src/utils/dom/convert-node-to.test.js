@@ -1,6 +1,7 @@
 import assert from 'assert';
 import cheerio from 'cheerio';
 
+import { stripCheerioWrapper } from 'test-helpers';
 import { convertNodeTo } from './convert-node-to';
 
 describe('convertNodeTo(node, $)', () => {
@@ -9,7 +10,7 @@ describe('convertNodeTo(node, $)', () => {
     const $ = cheerio.load(html);
     const node = $('div').first();
 
-    const result = convertNodeTo(node, $).html();
+    const result = stripCheerioWrapper(convertNodeTo(node, $));
     const after = '<p>Should become a p</p>';
 
     assert.equal(result, after);
@@ -20,7 +21,7 @@ describe('convertNodeTo(node, $)', () => {
     const $ = cheerio.load(html);
     const node = $('span').first();
 
-    const result = convertNodeTo(node, $, 'div').html();
+    const result = stripCheerioWrapper(convertNodeTo(node, $, 'div'));
     const after = '<div class="foo" score="100">Should keep its attrs</div>';
 
     assert.equal(result, after);
@@ -33,7 +34,7 @@ describe('convertNodeTo(node, $)', () => {
       get: () => null,
     };
 
-    const result = convertNodeTo(node, $, 'div').html();
+    const result = stripCheerioWrapper(convertNodeTo(node, $, 'div'));
 
     assert.equal(result, html);
   });
@@ -47,7 +48,11 @@ describe('convertNodeTo(node, $)', () => {
     const $ = cheerio.load(html);
     const node = $('noscript');
 
-    const result = convertNodeTo(node, $, 'figure', 'noscript').html();
+    const result = stripCheerioWrapper(
+      convertNodeTo(node, $, 'figure', 'noscript'),
+      undefined,
+      'head'
+    );
 
     assert.equal(result, resultHtml);
   });

@@ -1,6 +1,7 @@
 import assert from 'assert';
 import cheerio from 'cheerio';
 
+import { stripCheerioWrapper } from 'test-helpers';
 import { makeLinksAbsolute } from './make-links-absolute';
 
 describe('makeLinksAbsolute($)', () => {
@@ -9,7 +10,10 @@ describe('makeLinksAbsolute($)', () => {
     const $ = cheerio.load(html);
     const $content = $('*').first();
 
-    const result = $.html(makeLinksAbsolute($content, $, 'http://example.com'));
+    const result = stripCheerioWrapper(
+      $,
+      makeLinksAbsolute($content, $, 'http://example.com')
+    );
 
     assert.equal(
       result,
@@ -22,7 +26,8 @@ describe('makeLinksAbsolute($)', () => {
     const $ = cheerio.load(html);
     const $content = $('*').first();
 
-    const result = $.html(
+    const result = stripCheerioWrapper(
+      $,
       makeLinksAbsolute($content, $, 'http://example.com/baz/bat')
     );
 
@@ -37,7 +42,8 @@ describe('makeLinksAbsolute($)', () => {
     const $ = cheerio.load(html);
     const $content = $('*').first();
 
-    const result = $.html(
+    const result = stripCheerioWrapper(
+      $,
       makeLinksAbsolute($content, $, 'http://example.com/baz/bat')
     );
 
@@ -52,7 +58,10 @@ describe('makeLinksAbsolute($)', () => {
     const $ = cheerio.load(html);
     const $content = $('*').first();
 
-    const result = $.html(makeLinksAbsolute($content, $, 'http://example.com'));
+    const result = stripCheerioWrapper(
+      $,
+      makeLinksAbsolute($content, $, 'http://example.com')
+    );
 
     assert.equal(result, '<div><img src="http://example.com/#foo"></div>');
   });
@@ -91,7 +100,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -119,7 +129,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -146,7 +157,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -173,7 +185,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -196,7 +209,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -217,7 +231,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'http://example.com')
       );
 
@@ -236,7 +251,8 @@ describe('makeLinksAbsolute($)', () => {
       const $ = cheerio.load(html);
       const $content = $('*').first();
 
-      const result = $.html(
+      const result = stripCheerioWrapper(
+        $,
         makeLinksAbsolute($content, $, 'https://media.newyorker.com/')
       );
 

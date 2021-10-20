@@ -1,6 +1,8 @@
 import assert from 'assert';
 import cheerio from 'cheerio';
 
+import { stripCheerioWrapper } from 'test-helpers';
+
 import { convertLazyLoadedImages } from './convert-lazy-loaded-images';
 
 describe('convertLazyLoadedImages($)', () => {
@@ -8,7 +10,7 @@ describe('convertLazyLoadedImages($)', () => {
     const html = '<img data-src="http://example.com/foo.jpg">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(
       result,
@@ -20,7 +22,7 @@ describe('convertLazyLoadedImages($)', () => {
     const html = '<img data-srcset="http://example.com/foo.jpg 2x">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(
       result,
@@ -33,7 +35,7 @@ describe('convertLazyLoadedImages($)', () => {
       '<img data-srcset="http://example.com/foo.jpg?w=400 2x, http://example.com/foo.jpg?w=600 3x">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(
       result,
@@ -46,7 +48,7 @@ describe('convertLazyLoadedImages($)', () => {
       '<img data-src="http://example.com/foo.jpg" data-srcset="http://example.com/foo.jpg 2x">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(
       result,
@@ -60,7 +62,7 @@ describe('convertLazyLoadedImages($)', () => {
     const html = '<img data-src="foo.jpg">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(result, '<img data-src="foo.jpg">');
   });
@@ -69,7 +71,7 @@ describe('convertLazyLoadedImages($)', () => {
     const html = '<img data-src="http://example.com">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(result, '<img data-src="http://example.com">');
   });
@@ -78,7 +80,7 @@ describe('convertLazyLoadedImages($)', () => {
     const html = '<img src="http://example.com/foo.jpg">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(result, '<img src="http://example.com/foo.jpg">');
   });
@@ -88,7 +90,7 @@ describe('convertLazyLoadedImages($)', () => {
       '<img src="http://example.com/foo.jpg" srcset="http://example.com/foo2x.jpg 2x, http://example.com/foo.jpg">';
     const $ = cheerio.load(html);
 
-    const result = convertLazyLoadedImages($).html();
+    const result = stripCheerioWrapper(convertLazyLoadedImages($));
 
     assert.equal(
       result,
