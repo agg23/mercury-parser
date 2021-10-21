@@ -1,14 +1,13 @@
 import cheerio from 'cheerio';
 import TurndownService from 'turndown';
 
+import { addExtractor } from 'extractors/add-extractor';
+import { getExtractor } from 'extractors/get-extractor';
+import { RootExtractor } from 'extractors/root-extractor';
+import { collectAllPages } from 'extractors/collect-all-pages';
+import { selectExtendedTypes } from 'extractors/select';
+
 import Resource from './resource';
-import { addExtractor } from './extractors/add-extractor';
-import { getExtractor } from './extractors/get-extractor';
-import {
-  RootExtractor,
-  selectExtendedTypes,
-} from './extractors/root-extractor';
-import { collectAllPages } from './extractors/collect-all-pages';
 import { ErrorResult, Options, Result } from './types';
 
 export const parse = async (

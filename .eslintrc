@@ -28,8 +28,21 @@
     ],
     "no-nested-ternary": 0,
     "import/no-unresolved": false,
-    "@typescript-eslint/naming-convention": 0
+    "no-restricted-syntax": 0,
+    "prefer-destructuring": 0,
+    "@typescript-eslint/naming-convention": 0,
+    "@typescript-eslint/switch-exhaustiveness-check": "error"
   },
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "rules": {
+        "consistent-return": "off",
+        "default-case": "off",
+        "no-fallthrough": "off"
+      }
+    }
+  ],
   "settings": {
     "import/resolver": {
       "babel-module": {}
