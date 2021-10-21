@@ -4,7 +4,41 @@ export interface Extractor {
   // TODO: Add more
 }
 
-export interface InnerExtractorOptions {
+interface InnerExtractorBaseOptions {
+  transforms?: Record<
+    string,
+    string | ((node: cheerio.Cheerio, $: cheerio.Root) => unknown)
+  >;
+  defaultCleaner?: boolean;
+  clean?: string[];
+}
+
+/**
+ * @deprecated Use modern selection syntax
+ */
+export type DeprecatedSelection =
+  | string
+  | [string, string?]
+  | [string, string?, ((item: string) => string)?]
+  | [string, string, string?]
+  | [string, string, string, string?];
+
+/**
+ * @deprecated These are deprecated fields
+ */
+interface DeprecatedInnerExtractorOptions extends InnerExtractorBaseOptions {
+  /**
+   * @deprecated Use the modern selection syntax
+   */
+  selectors?: DeprecatedSelection[];
+
+  /**
+   * @deprecated Use the modern selection syntax
+   */
+  allowMultiple?: boolean;
+}
+
+interface ModernInnerExtractorOptions extends InnerExtractorBaseOptions {
   // selectors?: Selector[];
   selectors?: Selection[];
   transforms?: Record<
@@ -15,6 +49,10 @@ export interface InnerExtractorOptions {
   allowMultiple?: boolean;
   clean?: string[];
 }
+
+export type InnerExtractorOptions =
+  | ModernInnerExtractorOptions
+  | DeprecatedInnerExtractorOptions;
 
 export type DefaultContentType =
   | 'content'
@@ -115,11 +153,6 @@ export interface SelectedExtractOptions<T = InnerExtractorOptions> {
 
 export type CleanerOptions = SelectedExtractOptions & InnerExtractorOptions;
 
-// export type Selector =
-//   | string
-//   | [string, string?]
-//   | [string, string?, ((item: string) => string)?];
-
 export interface Extend {
   [Key: string]: InnerExtractorOptions;
 }
@@ -131,11 +164,13 @@ export interface Comment {
   children?: Comment[];
 }
 
+export interface SelectionSuccessResult {
+  type: 'content';
+  content: string | string[] | undefined;
+}
+
 export type SelectionResult =
-  | {
-      type: 'content';
-      content: string | string[] | undefined;
-    }
+  | SelectionSuccessResult
   | {
       type: 'error';
     };
@@ -223,7 +258,6 @@ export interface SelectionExactlyOne
    * If true, return a DOM node, otherwise, return the node's inner text
    */
   returnHtml?: boolean;
-  returns: string;
 }
 
 /**
@@ -236,7 +270,6 @@ export interface SelectionConcatinate extends BaseSelection {
    * Defaults to `', '`
    */
   joinPattern?: string;
-  returns: string;
 }
 
 /**
@@ -248,7 +281,6 @@ export interface SelectionFirstMatch extends BaseSelection {
    * If true, return a DOM node, otherwise, return the node's inner text
    */
   returnHtml?: boolean;
-  returns: string;
 }
 
 /**
@@ -256,7 +288,6 @@ export interface SelectionFirstMatch extends BaseSelection {
  */
 export interface SelectionMulitpleGrouped extends BaseSelection {
   type: 'multiGrouped';
-  returns: cheerio.Cheerio;
 }
 
 /**
@@ -268,7 +299,6 @@ export interface SelectionMultipleArray extends BaseSelection {
    * If true, return DOM nodes, otherwise, return the nodes' inner text
    */
   returnHtml?: boolean;
-  returns: string[];
 }
 
 type SelectionReturnMap = {

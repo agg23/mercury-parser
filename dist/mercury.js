@@ -67584,6 +67584,70 @@ const GenericExtractor = {
     },
 };
 
+const isDeprecatedSelection = (input) => typeof input === 'string' || Array.isArray(input);
+/**
+ * Migrates the deprecated selection to the modern format
+ */
+const migrateSelections = (selections, allowMultiple, extractHtml) => {
+    var _a;
+    return (_a = selections === null || selections === void 0 ? void 0 : selections.map((selection) => {
+        if (isDeprecatedSelection(selection)) {
+            if (typeof selection === 'string') {
+                if (allowMultiple) {
+                    return {
+                        type: 'multiArray',
+                        selector: selection,
+                        returnHtml: extractHtml,
+                    };
+                }
+                return {
+                    type: 'exactlyOne',
+                    selector: selection,
+                    returnHtml: extractHtml,
+                };
+            }
+            else if (extractHtml) {
+                // In extractHtml mode, selectors are string | string[]
+                return {
+                    type: 'multiGrouped',
+                    selector: {
+                        type: 'matchAll',
+                        selectors: selection,
+                    },
+                };
+            }
+            else if (selection.length < 3) {
+                const [selector, attr] = selection;
+                if (attr) {
+                    return {
+                        type: allowMultiple ? 'multiArray' : 'exactlyOne',
+                        selector: {
+                            type: 'matchAttr',
+                            selector,
+                            attr,
+                        },
+                    };
+                }
+                else {
+                    return {
+                        type: allowMultiple ? 'multiArray' : 'first',
+                        selector,
+                    };
+                }
+            }
+            else {
+                // const [selector, attr, transform] = selection;
+                // eslint-disable-next-line no-console
+                console.error(`Unmigrated transformed selection`, selection);
+                throw new Error('Unmigrated transformed selection');
+            }
+        }
+        else {
+            return selection;
+        }
+    })) !== null && _a !== void 0 ? _a : [];
+};
+
 // Remove elements by an array of selectors
 const cleanBySelectors = ($content, $, { clean } = {}) => {
     if (!clean) {
@@ -67715,8 +67779,7 @@ const chooseSelection = ($, selections, selectionRoot) => {
     return undefined;
 };
 const select = (opts, root) => {
-    const { $, type, extractionOpts,
-    // extractHtml = false,
+    const { $, type, extractionOpts, extractHtml = false,
     // allowConcatination,
      } = opts;
     // Skip if there's not extraction for this type
@@ -67725,8 +67788,8 @@ const select = (opts, root) => {
             type: 'error',
         };
     }
-    const { selectors, defaultCleaner: useDefaultCleaner = true } = extractionOpts;
-    const matchedSelection = chooseSelection($, selectors !== null && selectors !== void 0 ? selectors : [], root);
+    const { selectors, defaultCleaner: useDefaultCleaner = true, allowMultiple, } = extractionOpts;
+    const matchedSelection = chooseSelection($, migrateSelections(selectors, allowMultiple, extractHtml), root);
     if (!matchedSelection) {
         return {
             type: 'error',
@@ -67770,17 +67833,9 @@ const select = (opts, root) => {
                         .map(el => $.html($(el)));
             }
         };
-        const result = buildResult();
-        if (useDefaultCleaner && type in StringCleaners) {
-            const cleanedString = StringCleaners[type](result, Object.assign(Object.assign({}, opts), extractionOpts));
-            return {
-                type: 'content',
-                content: cleanedString,
-            };
-        }
         return {
             type: 'content',
-            content: result,
+            content: buildResult(),
         };
     }
     // Process for string output
@@ -67811,9 +67866,19 @@ const select = (opts, root) => {
                 return content.toArray();
         }
     };
+    const result = buildResult();
+    if (useDefaultCleaner &&
+        type in StringCleaners &&
+        typeof result === 'string') {
+        const cleanedString = StringCleaners[type](result, Object.assign(Object.assign({}, opts), extractionOpts));
+        return {
+            type: 'content',
+            content: cleanedString,
+        };
+    }
     return {
         type: 'content',
-        content: buildResult(),
+        content: result,
     };
 };
 const selectExtendedTypes = (extend, opts) => {
@@ -67853,7 +67918,7 @@ const selectNestedComments = (opts) => {
     }
     const { selectors } = extractionOpts.topLevel;
     const $ = cheerio.load(html);
-    const matchedSelection = chooseSelection($, selectors !== null && selectors !== void 0 ? selectors : []);
+    const matchedSelection = chooseSelection($, migrateSelections(selectors));
     if (!matchedSelection) {
         return undefined;
     }
@@ -67906,12 +67971,12 @@ const selectNestedComments = (opts) => {
         }
     };
     const processCommentChildren = (node, comment, childExtractionOpts) => {
-        var _a, _b;
-        const childMatchedSelection = chooseSelection($, (_a = childExtractionOpts === null || childExtractionOpts === void 0 ? void 0 : childExtractionOpts.selectors) !== null && _a !== void 0 ? _a : [], $(node));
+        var _a;
+        const childMatchedSelection = chooseSelection($, migrateSelections(childExtractionOpts === null || childExtractionOpts === void 0 ? void 0 : childExtractionOpts.selectors), $(node));
         if (!childMatchedSelection) {
             return;
         }
-        const commentBuilder = createCommentBuilder(((_b = comment.children) !== null && _b !== void 0 ? _b : (comment.children = [])), childExtractionOpts);
+        const commentBuilder = createCommentBuilder(((_a = comment.children) !== null && _a !== void 0 ? _a : (comment.children = [])), childExtractionOpts);
         const { matches: childMatches } = childMatchedSelection;
         childMatches.each((_, element) => commentBuilder(element));
     };

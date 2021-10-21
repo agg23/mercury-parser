@@ -1,5 +1,6 @@
-import { DOMCleaners, StringCleaners } from 'cleaners';
 import { convertNodeTo, getAttrs, makeLinksAbsolute } from 'utils/dom';
+import { DOMCleaners, StringCleaners } from '../cleaners';
+import { migrateSelections } from './select-migration';
 import {
   ConcatenatedSelectionResult,
   DefaultContentType,
@@ -208,7 +209,7 @@ export const select = (
     $,
     type,
     extractionOpts,
-    // extractHtml = false,
+    extractHtml = false,
     // allowConcatination,
   } = opts;
   // Skip if there's not extraction for this type
@@ -218,10 +219,17 @@ export const select = (
     };
   }
 
-  const { selectors, defaultCleaner: useDefaultCleaner = true } =
-    extractionOpts;
+  const {
+    selectors,
+    defaultCleaner: useDefaultCleaner = true,
+    allowMultiple,
+  } = extractionOpts;
 
-  const matchedSelection = chooseSelection($, selectors ?? [], root);
+  const matchedSelection = chooseSelection(
+    $,
+    migrateSelections(selectors, allowMultiple, extractHtml),
+    root
+  );
 
   if (!matchedSelection) {
     return {
@@ -284,26 +292,9 @@ export const select = (
       }
     };
 
-    const result = buildResult();
-
-    if (useDefaultCleaner && type in StringCleaners) {
-      const cleanedString = StringCleaners[type as keyof typeof StringCleaners](
-        result as any,
-        {
-          ...opts,
-          ...extractionOpts,
-        }
-      );
-
-      return {
-        type: 'content',
-        content: cleanedString,
-      };
-    }
-
     return {
       type: 'content',
-      content: result,
+      content: buildResult(),
     };
   }
 
@@ -340,9 +331,30 @@ export const select = (
     }
   };
 
+  const result = buildResult();
+
+  if (
+    useDefaultCleaner &&
+    type in StringCleaners &&
+    typeof result === 'string'
+  ) {
+    const cleanedString = StringCleaners[type as keyof typeof StringCleaners](
+      result,
+      {
+        ...opts,
+        ...extractionOpts,
+      }
+    );
+
+    return {
+      type: 'content',
+      content: cleanedString,
+    };
+  }
+
   return {
     type: 'content',
-    content: buildResult(),
+    content: result,
   };
 };
 

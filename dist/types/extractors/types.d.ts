@@ -3,13 +3,36 @@ export interface Extractor {
     domain: string;
     supportedDomains: string;
 }
-export interface InnerExtractorOptions {
+interface InnerExtractorBaseOptions {
+    transforms?: Record<string, string | ((node: cheerio.Cheerio, $: cheerio.Root) => unknown)>;
+    defaultCleaner?: boolean;
+    clean?: string[];
+}
+/**
+ * @deprecated Use modern selection syntax
+ */
+export declare type DeprecatedSelection = string | [string, string?] | [string, string?, ((item: string) => string)?] | [string, string, string?] | [string, string, string, string?];
+/**
+ * @deprecated These are deprecated fields
+ */
+interface DeprecatedInnerExtractorOptions extends InnerExtractorBaseOptions {
+    /**
+     * @deprecated Use the modern selection syntax
+     */
+    selectors?: DeprecatedSelection[];
+    /**
+     * @deprecated Use the modern selection syntax
+     */
+    allowMultiple?: boolean;
+}
+interface ModernInnerExtractorOptions extends InnerExtractorBaseOptions {
     selectors?: Selection[];
     transforms?: Record<string, string | ((node: cheerio.Cheerio, $: cheerio.Root) => unknown)>;
     defaultCleaner?: boolean;
     allowMultiple?: boolean;
     clean?: string[];
 }
+export declare type InnerExtractorOptions = ModernInnerExtractorOptions | DeprecatedInnerExtractorOptions;
 export declare type DefaultContentType = 'content' | 'comment' | 'title' | 'date_published' | 'author' | 'next_page_url' | 'lead_image_url' | 'excerpt' | 'dek' | 'word_count' | 'direction' | 'url_and_domain';
 export interface ChildLevelCommentExtractorOptions extends Omit<InnerExtractorOptions, 'transforms'> {
     /**
@@ -79,10 +102,11 @@ export interface Comment {
     text: string;
     children?: Comment[];
 }
-export declare type SelectionResult = {
+export interface SelectionSuccessResult {
     type: 'content';
     content: string | string[] | undefined;
-} | {
+}
+export declare type SelectionResult = SelectionSuccessResult | {
     type: 'error';
 };
 export declare type ConcatenatedSelectionResult = {
@@ -144,7 +168,6 @@ export interface SelectionExactlyOne extends BaseSelection<Exclude<Selector, Sel
      * If true, return a DOM node, otherwise, return the node's inner text
      */
     returnHtml?: boolean;
-    returns: string;
 }
 /**
  * Select matching nodes, clean them, and concatinate their inner text. Concatination
@@ -156,7 +179,6 @@ export interface SelectionConcatinate extends BaseSelection {
      * Defaults to `', '`
      */
     joinPattern?: string;
-    returns: string;
 }
 /**
  * Selects the first matching node
@@ -167,14 +189,12 @@ export interface SelectionFirstMatch extends BaseSelection {
      * If true, return a DOM node, otherwise, return the node's inner text
      */
     returnHtml?: boolean;
-    returns: string;
 }
 /**
  * Selects all matching nodes and combines them under a parent `div`
  */
 export interface SelectionMulitpleGrouped extends BaseSelection {
     type: 'multiGrouped';
-    returns: cheerio.Cheerio;
 }
 /**
  * Selects all matching nodes and returns them as an array
@@ -185,7 +205,6 @@ export interface SelectionMultipleArray extends BaseSelection {
      * If true, return DOM nodes, otherwise, return the nodes' inner text
      */
     returnHtml?: boolean;
-    returns: string[];
 }
 declare type SelectionReturnMap = {
     exactlyOne: string;

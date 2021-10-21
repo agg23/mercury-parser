@@ -3,6 +3,7 @@ import { stripNewlines } from 'utils/dom';
 import { normalizeSpaces } from 'utils/text';
 import { GenericExtractor } from './generic';
 import { chooseSelection, selectConcatinating } from './select';
+import { migrateSelections } from './select-migration';
 
 import {
   CommentExtractorOptions,
@@ -32,7 +33,7 @@ const selectNestedComments = (
   const { selectors } = extractionOpts.topLevel;
   const $ = cheerio.load(html);
 
-  const matchedSelection = chooseSelection($, selectors ?? []);
+  const matchedSelection = chooseSelection($, migrateSelections(selectors));
 
   if (!matchedSelection) {
     return undefined;
@@ -135,7 +136,7 @@ const selectNestedComments = (
   ) => {
     const childMatchedSelection = chooseSelection(
       $,
-      childExtractionOpts?.selectors ?? [],
+      migrateSelections(childExtractionOpts?.selectors),
       $(node)
     );
 
