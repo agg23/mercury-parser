@@ -1,6 +1,6 @@
 import cheerio from 'cheerio';
 
-import { nodeIsSufficient } from '../../../utils/dom';
+import { loadCheerio, nodeIsSufficient } from '../../../utils/dom';
 import { cleanContent } from '../../../cleaners';
 import { normalizeSpaces } from '../../../utils/text';
 
@@ -30,7 +30,7 @@ export const GenericContentExtractor = {
   ) {
     const options = { ...this.defaultOpts, ...opts };
 
-    $ = $ || cheerio.load(html);
+    $ = $ || loadCheerio(html);
 
     // Cascade through our extraction-specific opts in an ordered fashion,
     // turning them off as we try to extract content.
@@ -47,7 +47,7 @@ export const GenericContentExtractor = {
       k => options[k as keyof ExtractorOptions] === true
     )) {
       options[key as keyof ExtractorOptions] = false;
-      $ = cheerio.load(html);
+      $ = loadCheerio(html);
 
       node = this.getContentNode($, title, url, options);
 

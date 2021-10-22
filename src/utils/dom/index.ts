@@ -27,3 +27,4 @@ export { setAttrs } from './set-attrs';
 export { cleanWrappingTags } from './clean-wrapping';
 export { stripNewlines } from './strip-newlines';
 export { stripEmptyTextNodes } from './strip-empty-text';
+export { loadCheerio } from './load';

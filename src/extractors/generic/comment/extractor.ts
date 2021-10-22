@@ -1,4 +1,5 @@
 import cheerio from 'cheerio';
+import { loadCheerio } from 'utils/dom';
 
 import { ExtractorOptions } from '../content/types';
 import { extractBestNodes } from './extract-best-node';
@@ -21,7 +22,7 @@ export const GenericCommentExtractor = {
   ) {
     const options = { ...this.defaultOpts, ...opts };
 
-    $ = cheerio.load(html);
+    $ = loadCheerio(html);
 
     // Cascade through our extraction-specific opts in an ordered fashion,
     // turning them off as we try to extract content.

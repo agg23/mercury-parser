@@ -2,6 +2,7 @@ import cheerio from 'cheerio';
 import * as iconv from 'iconv-lite';
 import { Headers } from 'cross-fetch';
 
+import { loadCheerio } from 'utils/dom';
 import { getEncoding } from '../utils/text';
 import { fetchResource } from './utils';
 import { normalizeMetaTags, convertLazyLoadedImages, clean } from './utils/dom';
@@ -83,7 +84,7 @@ const Resource = {
   }): cheerio.Root {
     const encoding = getEncoding(contentType);
     let decodedContent = iconv.decode(content, encoding);
-    let $ = cheerio.load(decodedContent);
+    let $ = loadCheerio(decodedContent);
 
     // after first cheerio.load, check to see if encoding matches
     const contentTypeSelector = (cheerio as any).browser
@@ -97,7 +98,7 @@ const Resource = {
     // if encodings in the header/body dont match, use the one in the body
     if (metaContentType && properEncoding !== encoding) {
       decodedContent = iconv.decode(content, properEncoding);
-      $ = cheerio.load(decodedContent);
+      $ = loadCheerio(decodedContent);
     }
 
     return $;

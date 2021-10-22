@@ -1,4 +1,6 @@
-import { extractFromMeta } from '../../../utils/dom';
+import cheerio from 'cheerio';
+
+import { extractFromMeta, loadCheerio } from '../../../utils/dom';
 import { cleanImage } from '../../../cleaners';
 
 import {
@@ -37,9 +39,7 @@ export const GenericLeadImageUrlExtractor = {
   }) {
     let cleanUrl;
     if (!($ as any).browser && $('head').length === 0) {
-      $('*')
-        .first()
-        .prepend(html);
+      $ = loadCheerio(html);
     }
 
     // Check to see if we have a matching meta tag that we can make use of.

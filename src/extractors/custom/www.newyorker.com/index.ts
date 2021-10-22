@@ -1,7 +1,10 @@
 // Rename CustomExtractor
 // to fit your publication
+
+import { CustomExtractor } from 'extractors/types';
+
 // (e.g., NYTimesExtractor)
-export const NewYorkerExtractor = {
+export const NewYorkerExtractor: CustomExtractor = {
   domain: 'www.newyorker.com',
   title: {
     selectors: [
@@ -12,19 +15,20 @@ export const NewYorkerExtractor = {
 
   author: {
     selectors: [
-      [
-        'article header div[class*="Byline__multipleContributors"] a[rel="author"]',
-      ],
-      ['div[class^="ArticleContributors"] a[rel="author"]'],
+      {
+        type: 'concatinate',
+        selector:
+          'article header div[class*="Byline__multipleContributors"] a[rel="author"]',
+      },
+      {
+        type: 'concatinate',
+        selector: 'div[class^="ArticleContributors"] a[rel="author"]',
+      },
     ],
   },
 
   content: {
     selectors: ['main[class^="Layout__content"]'],
-
-    // Is there anything in the content you selected that needs transformed
-    // before it's consumable content? E.g., unusual lazy loaded images
-    transforms: [],
 
     // Is there anything that is in the result that shouldn't be?
     // The clean selectors will remove anything that matches from
@@ -45,8 +49,4 @@ export const NewYorkerExtractor = {
   dek: {
     selectors: ['h2[class^="ArticleHeader__dek"]'],
   },
-
-  next_page_url: null,
-
-  excerpt: null,
 };

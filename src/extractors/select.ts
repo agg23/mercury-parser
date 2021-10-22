@@ -161,13 +161,15 @@ const selectionMatches = <T extends Selection>(
           matches: matches.first(),
         };
       }
+
+      return undefined;
     }
     case 'concatinate':
     case 'multiGrouped':
     case 'multiArray': {
       const matches = selectorTest(selection.selector);
 
-      if (!matches) {
+      if (!matches || matches.length < 1) {
         return undefined;
       }
 
@@ -243,7 +245,7 @@ export const select = (
   const $wrapper = $('<div></div>');
   matches.each((_, element) => {
     // TODO: Cheerio doesn't list cheerio.Element as an appendable type
-    $wrapper.append($(element));
+    $wrapper.append($(element).clone());
   });
 
   let $content: cheerio.Cheerio | undefined = $wrapper;

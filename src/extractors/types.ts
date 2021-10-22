@@ -54,6 +54,14 @@ export type InnerExtractorOptions =
   | ModernInnerExtractorOptions
   | DeprecatedInnerExtractorOptions;
 
+type TypedInnerExtractorOptions<T extends DefaultContentType> =
+  T extends 'date_published'
+    ? InnerExtractorOptions & {
+        format?: string;
+        timezone?: string;
+      }
+    : InnerExtractorOptions;
+
 export type DefaultContentType =
   | 'content'
   | 'comment'
@@ -101,7 +109,10 @@ export interface CommentExtractorOptions {
 }
 
 export type CustomExtractor = {
-  [Key in Exclude<DefaultContentType, 'comment'>]?: InnerExtractorOptions;
+  [Key in Exclude<
+    DefaultContentType,
+    'comment'
+  >]?: TypedInnerExtractorOptions<Key>;
 } & {
   domain: string;
   supportedDomains?: string[];

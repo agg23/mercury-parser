@@ -1,4 +1,4 @@
-import cheerio from 'cheerio';
+import { loadCheerio } from 'utils/dom';
 
 import { normalizeSpaces } from '../../../utils/text';
 
@@ -8,7 +8,7 @@ export const GenericWordCountExtractor = {
       return 0;
     }
 
-    const $ = cheerio.load(content);
+    const $ = loadCheerio(content);
     const $content = $('div').first();
 
     const text = normalizeSpaces($content.text());

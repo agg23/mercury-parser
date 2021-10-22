@@ -24,7 +24,9 @@ export const WwwFortinetComExtractor = {
 
     transforms: {
       noscript: $node => {
-        const $children = $node.children();
+        const $children = $node
+          .children()
+          .filter((_, element) => element.type === 'tag');
         if ($children.length === 1 && $children.get(0).tagName === 'img') {
           return 'figure';
         }

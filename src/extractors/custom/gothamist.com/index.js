@@ -23,10 +23,6 @@ export const GothamistComExtractor = {
     timezone: 'America/New_York',
   },
 
-  dek: {
-    selectors: [null],
-  },
-
   lead_image_url: {
     selectors: [['meta[name="og:image"]', 'value']],
   },

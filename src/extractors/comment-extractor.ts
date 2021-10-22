@@ -1,5 +1,4 @@
-import cheerio from 'cheerio';
-import { stripNewlines } from 'utils/dom';
+import { loadCheerio, stripNewlines } from 'utils/dom';
 import { normalizeSpaces } from 'utils/text';
 import { GenericExtractor } from './generic';
 import { chooseSelection, selectConcatinating } from './select';
@@ -31,7 +30,7 @@ const selectNestedComments = (
   }
 
   const { selectors } = extractionOpts.topLevel;
-  const $ = cheerio.load(html);
+  const $ = loadCheerio(html);
 
   const matchedSelection = chooseSelection($, migrateSelections(selectors));
 

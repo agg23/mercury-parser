@@ -46,7 +46,7 @@ describe('WwwTmzComExtractor', () => {
 
       // Update these values with the expected values from
       // the article.
-      assert.equal(author, 'TMZ STAFF');
+      assert.equal(author, undefined);
     });
 
     it('returns the date_published', async () => {

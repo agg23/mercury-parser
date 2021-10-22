@@ -49,7 +49,6 @@ describe('WwwRawstoryComExtractor', () => {
 
       // Update these values with the expected values from
       // the article.
-      // TODO: Failing due to some dependency failing to handle :first-of-type correctly
       assert.equal(author, 'Tana Ganeva');
     });
 

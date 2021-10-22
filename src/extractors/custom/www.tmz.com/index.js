@@ -5,8 +5,6 @@ export const WwwTmzComExtractor = {
     selectors: ['.post-title-breadcrumb', 'h1', '.headline'],
   },
 
-  author: 'TMZ STAFF',
-
   date_published: {
     selectors: ['.article-posted-date'],
 

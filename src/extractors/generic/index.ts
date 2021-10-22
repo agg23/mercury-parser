@@ -1,6 +1,7 @@
 import cheerio from 'cheerio';
 import stringDirection from 'string-direction';
 
+import { loadCheerio } from 'utils/dom';
 import { GenericContentExtractor } from './content/extractor';
 import { GenericTitleExtractor } from './title/extractor';
 import { GenericAuthorExtractor } from './author/extractor';
@@ -42,7 +43,7 @@ export const GenericExtractor = {
     const { html, $ } = options;
 
     if (html && !$) {
-      options.$ = cheerio.load(html);
+      options.$ = loadCheerio(html);
     }
 
     const title = this.title(options);
