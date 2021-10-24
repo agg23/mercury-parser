@@ -4,6 +4,10 @@ export const cleanWrappingTags = (
   $node: cheerio.Cheerio,
   $: cheerio.Root
 ): cheerio.Cheerio => {
+  if ($node.length < 1) {
+    return $node;
+  }
+
   const element = $node[0];
 
   if (element.type === 'tag') {

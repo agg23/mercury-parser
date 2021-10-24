@@ -33,6 +33,10 @@ interface ModernInnerExtractorOptions extends InnerExtractorBaseOptions {
     clean?: string[];
 }
 export declare type InnerExtractorOptions = ModernInnerExtractorOptions | DeprecatedInnerExtractorOptions;
+declare type TypedInnerExtractorOptions<T extends DefaultContentType> = T extends 'date_published' ? InnerExtractorOptions & {
+    format?: string;
+    timezone?: string;
+} : InnerExtractorOptions;
 export declare type DefaultContentType = 'content' | 'comment' | 'title' | 'date_published' | 'author' | 'next_page_url' | 'lead_image_url' | 'excerpt' | 'dek' | 'word_count' | 'direction' | 'url_and_domain';
 export interface ChildLevelCommentExtractorOptions extends Omit<InnerExtractorOptions, 'transforms'> {
     /**
@@ -51,10 +55,11 @@ export interface CommentExtractorOptions {
     childLevel?: ChildLevelCommentExtractorOptions;
     author: InnerExtractorOptions;
     score?: InnerExtractorOptions;
+    date?: InnerExtractorOptions;
     text: InnerExtractorOptions;
 }
 export declare type CustomExtractor = {
-    [Key in Exclude<DefaultContentType, 'comment'>]?: InnerExtractorOptions;
+    [Key in Exclude<DefaultContentType, 'comment'>]?: TypedInnerExtractorOptions<Key>;
 } & {
     domain: string;
     supportedDomains?: string[];
@@ -99,6 +104,7 @@ export interface Extend {
 export interface Comment {
     author?: string;
     score?: string;
+    date?: string;
     text: string;
     children?: Comment[];
 }
@@ -153,6 +159,7 @@ export interface SelectorMatchAttr {
     type: 'matchAttr';
     selector: string;
     attr: string;
+    transform?: (value: string) => string;
 }
 export declare type Selector = string | SelectorMatchAll | SelectorMatchAttr;
 export declare type SelectorReturnType<T extends Selector> = T extends string ? cheerio.Cheerio : T extends SelectorMatchAll ? cheerio.Cheerio : T extends SelectorMatchAttr ? cheerio.Cheerio : never;

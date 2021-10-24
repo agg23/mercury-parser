@@ -1,4 +1,4 @@
-/// <reference types="cheerio" />
+import cheerio from 'cheerio';
 export declare const GenericLeadImageUrlExtractor: {
     extract({ $, content, metaCache, html, }: {
         $: cheerio.Root;

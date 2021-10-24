@@ -23453,36 +23453,43 @@ const TheAtlanticExtractor = {
 // to fit your publication
 // (e.g., NYTimesExtractor)
 const NewYorkerExtractor = {
-  domain: 'www.newyorker.com',
-  title: {
-    selectors: ['h1[class^="ArticleHeader__hed"]', ['meta[name="og:title"]', 'value']]
-  },
-  author: {
-    selectors: [['article header div[class*="Byline__multipleContributors"] a[rel="author"]'], ['div[class^="ArticleContributors"] a[rel="author"]']]
-  },
-  content: {
-    selectors: ['main[class^="Layout__content"]'],
-    // Is there anything in the content you selected that needs transformed
-    // before it's consumable content? E.g., unusual lazy loaded images
-    transforms: [],
-    // Is there anything that is in the result that shouldn't be?
-    // The clean selectors will remove anything that matches from
-    // the result
-    clean: ['footer[class^="ArticleFooter__footer"]']
-  },
-  date_published: {
-    selectors: [['meta[name="pubdate"]', 'value']],
-    format: 'YYYYMMDD',
-    timezone: 'America/New_York'
-  },
-  lead_image_url: {
-    selectors: [['meta[name="og:image"]', 'value']]
-  },
-  dek: {
-    selectors: ['h2[class^="ArticleHeader__dek"]']
-  },
-  next_page_url: null,
-  excerpt: null
+    domain: 'www.newyorker.com',
+    title: {
+        selectors: [
+            'h1[class^="ArticleHeader__hed"]',
+            ['meta[name="og:title"]', 'value'],
+        ],
+    },
+    author: {
+        selectors: [
+            {
+                type: 'concatinate',
+                selector: 'article header div[class*="Byline__multipleContributors"] a[rel="author"]',
+            },
+            {
+                type: 'concatinate',
+                selector: 'div[class^="ArticleContributors"] a[rel="author"]',
+            },
+        ],
+    },
+    content: {
+        selectors: ['main[class^="Layout__content"]'],
+        // Is there anything that is in the result that shouldn't be?
+        // The clean selectors will remove anything that matches from
+        // the result
+        clean: ['footer[class^="ArticleFooter__footer"]'],
+    },
+    date_published: {
+        selectors: [['meta[name="pubdate"]', 'value']],
+        format: 'YYYYMMDD',
+        timezone: 'America/New_York',
+    },
+    lead_image_url: {
+        selectors: [['meta[name="og:image"]', 'value']],
+    },
+    dek: {
+        selectors: ['h2[class^="ArticleHeader__dek"]'],
+    },
 };
 
 // Rename CustomExtractor
@@ -23955,7 +23962,6 @@ const WwwTmzComExtractor = {
   title: {
     selectors: ['.post-title-breadcrumb', 'h1', '.headline']
   },
-  author: 'TMZ STAFF',
   date_published: {
     selectors: ['.article-posted-date'],
     timezone: 'America/Los_Angeles'
@@ -26063,9 +26069,6 @@ const GothamistComExtractor = {
     selectors: ['abbr', 'abbr.published'],
     timezone: 'America/New_York'
   },
-  dek: {
-    selectors: [null]
-  },
   lead_image_url: {
     selectors: [['meta[name="og:image"]', 'value']]
   },
@@ -26201,7 +26204,7 @@ const WwwFortinetComExtractor = {
     selectors: ['div.responsivegrid.aem-GridColumn.aem-GridColumn--default--12'],
     transforms: {
       noscript: $node => {
-        const $children = $node.children();
+        const $children = $node.children().filter((_, element) => element.type === 'tag');
 
         if ($children.length === 1 && $children.get(0).tagName === 'img') {
           return 'figure';
@@ -26359,66 +26362,149 @@ const GithubComExtractor = {
 };
 
 const WwwRedditComExtractor = {
-  domain: 'www.reddit.com',
-  supportedDomains: ['old.reddit.com'],
-  title: {
-    selectors: ['div[data-test-id="post-content"] h2']
-  },
-  author: {
-    selectors: ['div[data-test-id="post-content"] a[href*="user/"]']
-  },
-  date_published: {
-    selectors: ['div[data-test-id="post-content"] a[data-click-id="timestamp"]']
-  },
-  lead_image_url: {
-    selectors: [['meta[name="og:image"]', 'value']]
-  },
-  content: {
-    selectors: [['div[data-test-id="post-content"] p'], // text post
-    ['div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])', // external link
-    'div[data-test-id="post-content"] div[data-click-id="media"]' // embedded media
-    ], // external link with media preview (YouTube, imgur album, etc...)
-    ['div[data-test-id="post-content"] div[data-click-id="media"]'], // Embedded media (Reddit video)
-    ['div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])'], // external link
-    'div[data-test-id="post-content"]'],
-    // Is there anything in the content you selected that needs transformed
-    // before it's consumable content? E.g., unusual lazy loaded images
-    transforms: {
-      'div[role="img"]': $node => {
-        // External link image preview
-        const $img = $node.find('img');
-        const bgImg = $node.css('background-image');
-
-        if ($img.length === 1 && bgImg) {
-          $img.attr('src', bgImg.match(/\((.*?)\)/)[1].replace(/('|")/g, ''));
-          return $img;
-        }
-
-        return $node;
-      }
-    },
-    // Is there anything that is in the result that shouldn't be?
-    // The clean selectors will remove anything that matches from
-    // the result
-    clean: ['.icon']
-  },
-  comment: {
-    topLevel: {
-      selectors: ['.commentarea > div > .comment']
-    },
-    childLevel: {
-      selectors: ['> .child > div > .comment']
+    domain: 'www.reddit.com',
+    supportedDomains: ['old.reddit.com'],
+    title: {
+        selectors: [
+            {
+                type: 'exactlyOne',
+                selector: 'div[data-test-id="post-content"] h2',
+            },
+        ],
     },
     author: {
-      selectors: ['.author']
+        selectors: [
+            {
+                type: 'first',
+                selector: 'div[data-test-id="post-content"] a[href*="user/"]',
+            },
+        ],
     },
-    score: {
-      selectors: ['.score']
+    date_published: {
+        selectors: [
+            {
+                type: 'exactlyOne',
+                selector: 'div[data-test-id="post-content"] a[data-click-id="timestamp"]',
+            },
+        ],
     },
-    text: {
-      selectors: ['.usertext-body']
-    }
-  }
+    lead_image_url: {
+        selectors: [
+            {
+                type: 'first',
+                selector: {
+                    type: 'matchAttr',
+                    selector: 'meta[name="og:image"]',
+                    attr: 'value',
+                },
+            },
+        ],
+    },
+    content: {
+        selectors: [
+            {
+                type: 'multiGrouped',
+                selector: 'div[data-test-id="post-content"] p', // text post
+            },
+            {
+                type: 'multiGrouped',
+                selector: {
+                    type: 'matchAll',
+                    selectors: [
+                        'div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])',
+                        'div[data-test-id="post-content"] div[data-click-id="media"]', // embedded media
+                    ],
+                },
+            },
+            {
+                type: 'multiGrouped',
+                selector: 'div[data-test-id="post-content"] div[data-click-id="media"]', // Embedded media (Reddit video)
+            },
+            {
+                type: 'multiGrouped',
+                selector: 'div[data-test-id="post-content"] a[target="_blank"]:not([data-click-id="timestamp"])', // external link
+            },
+            {
+                type: 'multiGrouped',
+                selector: 'div[data-test-id="post-content"]',
+            },
+        ],
+        // Is there anything in the content you selected that needs transformed
+        // before it's consumable content? E.g., unusual lazy loaded images
+        transforms: {
+            'div[role="img"]': $node => {
+                var _a, _b;
+                // External link image preview
+                const $img = $node.find('img');
+                const bgImg = $node.css('background-image');
+                if ($img.length === 1 && bgImg) {
+                    $img.attr('src', (_b = (_a = bgImg.match(/\((.*?)\)/)) === null || _a === void 0 ? void 0 : _a[1].replace(/('|")/g, '')) !== null && _b !== void 0 ? _b : '');
+                    return $img;
+                }
+                return $node;
+            },
+        },
+        // Is there anything that is in the result that shouldn't be?
+        // The clean selectors will remove anything that matches from
+        // the result
+        clean: ['.icon'],
+    },
+    comment: {
+        topLevel: {
+            selectors: [
+                {
+                    type: 'multiArray',
+                    selector: '.commentarea > div > .comment',
+                },
+            ],
+        },
+        childLevel: {
+            selectors: [
+                {
+                    type: 'multiArray',
+                    selector: '> .child > div > .comment',
+                },
+            ],
+        },
+        author: {
+            selectors: [
+                {
+                    type: 'first',
+                    selector: '.author',
+                    returnHtml: true,
+                },
+            ],
+        },
+        score: {
+            selectors: [
+                {
+                    type: 'first',
+                    selector: '.score',
+                },
+            ],
+        },
+        date: {
+            selectors: [
+                {
+                    type: 'first',
+                    selector: {
+                        type: 'matchAttr',
+                        selector: 'time',
+                        attr: 'datetime',
+                    },
+                },
+            ],
+        },
+        text: {
+            selectors: [
+                {
+                    type: 'first',
+                    selector: '.usertext-body',
+                    returnHtml: true,
+                },
+            ],
+        },
+    },
 };
 
 const OtrsComExtractor = {
@@ -27364,22 +27450,39 @@ const findCommentParent = (comments, indentLevel) => {
 const NewsYcombinatorComExtractor = {
     domain: 'news.ycombinator.com',
     title: {
-        selectors: [['#pagespace', 'title']],
+        selectors: [
+            {
+                type: 'exactlyOne',
+                selector: {
+                    type: 'matchAttr',
+                    selector: '#pagespace',
+                    attr: 'title',
+                },
+            },
+        ],
     },
     author: {
-        selectors: ['.fatitem .hnuser'],
+        selectors: [{ type: 'exactlyOne', selector: '.fatitem .hnuser' }],
     },
     date_published: {
-        selectors: [['.fatitem .age', 'title']],
-    },
-    dek: {
-        selectors: [],
-    },
-    lead_image_url: {
-        selectors: [],
+        selectors: [
+            {
+                type: 'exactlyOne',
+                selector: {
+                    type: 'matchAttr',
+                    selector: '.fatitem .age',
+                    attr: 'title',
+                },
+            },
+        ],
     },
     content: {
-        selectors: [['.fatitem tr:nth-of-type(4) td:nth-of-type(2)']],
+        selectors: [
+            {
+                type: 'exactlyOne',
+                selector: '.fatitem tr:nth-of-type(4) td:nth-of-type(2)',
+            },
+        ],
         // Is there anything in the content you selected that needs transformed
         // before it's consumable content? E.g., unusual lazy loaded images
         transforms: {},
@@ -27390,10 +27493,14 @@ const NewsYcombinatorComExtractor = {
     },
     comment: {
         topLevel: {
-            selectors: [['.comment-tree .comtr tr']],
+            selectors: [
+                {
+                    type: 'multiArray',
+                    selector: '.comment-tree .comtr tr',
+                },
+            ],
         },
         childLevel: {
-            // selectors: [['.ind', 'indent']],
             insertTransform: ($, node, newComment, comments) => {
                 var _a, _b;
                 const indentNode = $('.ind', node).first();
@@ -27417,13 +27524,32 @@ const NewsYcombinatorComExtractor = {
             },
         },
         author: {
-            selectors: [['.hnuser']],
+            selectors: [
+                {
+                    type: 'multiGrouped',
+                    selector: '.hnuser',
+                },
+            ],
         },
         date: {
-            selectors: [['.age', 'title']],
+            selectors: [
+                {
+                    type: 'first',
+                    selector: {
+                        type: 'matchAttr',
+                        selector: '.age',
+                        attr: 'title',
+                    },
+                },
+            ],
         },
         text: {
-            selectors: [['.comment .commtext']],
+            selectors: [
+                {
+                    type: 'multiGrouped',
+                    selector: '.comment .commtext',
+                },
+            ],
             clean: ['.reply'],
         },
     },
@@ -27594,7 +27720,8 @@ function getExtractor(url, parsedUrl, $) {
         apiExtractors[baseDomain] ||
         (hostname && all[hostname]) ||
         all[baseDomain] ||
-        detectByHtml($));
+        ($ && detectByHtml($)) ||
+        undefined);
 }
 
 var stringDirection = {};
@@ -27778,8 +27905,6 @@ const WHITELIST_ATTRS = [
     'sizes',
     'type',
     'href',
-    'class',
-    'id',
     'alt',
     'xlink:href',
     'width',
@@ -28364,6 +28489,7 @@ function removeAllButWhitelist($article, $) {
     });
     // Remove the mercury-parser-keep class from result
     $(`.${KEEP_CLASS}`, $article).removeClass(KEEP_CLASS);
+    $article.removeAttr('score');
     return $article;
 }
 // Remove attributes like style or align
@@ -40285,6 +40411,9 @@ function isWordpress($) {
 }
 
 const cleanWrappingTags = ($node, $) => {
+    if ($node.length < 1) {
+        return $node;
+    }
     const element = $node[0];
     if (element.type === 'tag') {
         if (element.children.length < 2 &&
@@ -40323,6 +40452,10 @@ const stripEmptyTextNodes = ($content, $) => {
         }
     });
 };
+
+const loadCheerio = (html) => cheerio.load(html, {
+    scriptingEnabled: false,
+});
 
 // CLEAN AUTHOR CONSTANTS
 const CLEAN_AUTHOR_RE = /^\s*(posted |written )?by\s*:?\s*(.*)/i;
@@ -64623,7 +64756,7 @@ const GenericContentExtractor = {
     // as a cheerio node rather than as an HTML string.
     extract({ $, html, title, url, }, opts) {
         const options = Object.assign(Object.assign({}, this.defaultOpts), opts);
-        $ = $ || cheerio.load(html);
+        $ = $ || loadCheerio(html);
         // Cascade through our extraction-specific opts in an ordered fashion,
         // turning them off as we try to extract content.
         let node = this.getContentNode($, title, url, options);
@@ -64635,7 +64768,7 @@ const GenericContentExtractor = {
         // eslint-disable-next-line no-restricted-syntax
         for (const key of Reflect.ownKeys(options).filter(k => options[k] === true)) {
             options[key] = false;
-            $ = cheerio.load(html);
+            $ = loadCheerio(html);
             node = this.getContentNode($, title, url, options);
             if (!!node && nodeIsSufficient(node)) {
                 break;
@@ -65068,9 +65201,7 @@ const GenericLeadImageUrlExtractor = {
     extract({ $, content, metaCache, html, }) {
         let cleanUrl;
         if (!$.browser && $('head').length === 0) {
-            $('*')
-                .first()
-                .prepend(html);
+            $ = loadCheerio(html);
         }
         // Check to see if we have a matching meta tag that we can make use of.
         // Moving this higher because common practice is now to use large
@@ -67441,7 +67572,7 @@ const GenericWordCountExtractor = {
         if (!content) {
             return 0;
         }
-        const $ = cheerio.load(content);
+        const $ = loadCheerio(content);
         const $content = $('div').first();
         const text = normalizeSpaces($content.text());
         return text.split(/\s/).length;
@@ -67486,7 +67617,7 @@ const GenericCommentExtractor = {
     // as a cheerio node rather than as an HTML string.
     extract({ $, html }, opts) {
         const options = Object.assign(Object.assign({}, this.defaultOpts), opts);
-        $ = cheerio.load(html);
+        $ = loadCheerio(html);
         // Cascade through our extraction-specific opts in an ordered fashion,
         // turning them off as we try to extract content.
         return extractBestNodes($, options);
@@ -67551,7 +67682,7 @@ const GenericExtractor = {
     extract(options) {
         const { html, $ } = options;
         if (html && !$) {
-            options.$ = cheerio.load(html);
+            options.$ = loadCheerio(html);
         }
         const title = this.title(options);
         const date_published = this.date_published(options);
@@ -67616,8 +67747,8 @@ const migrateSelections = (selections, allowMultiple, extractHtml) => {
                     },
                 };
             }
-            else if (selection.length < 3) {
-                const [selector, attr] = selection;
+            else {
+                const [selector, attr, transform] = selection;
                 if (attr) {
                     return {
                         type: allowMultiple ? 'multiArray' : 'exactlyOne',
@@ -67625,6 +67756,7 @@ const migrateSelections = (selections, allowMultiple, extractHtml) => {
                             type: 'matchAttr',
                             selector,
                             attr,
+                            transform: typeof transform === 'function' ? transform : undefined,
                         },
                     };
                 }
@@ -67634,12 +67766,6 @@ const migrateSelections = (selections, allowMultiple, extractHtml) => {
                         selector,
                     };
                 }
-            }
-            else {
-                // const [selector, attr, transform] = selection;
-                // eslint-disable-next-line no-console
-                console.error(`Unmigrated transformed selection`, selection);
-                throw new Error('Unmigrated transformed selection');
             }
         }
         else {
@@ -67752,12 +67878,13 @@ const selectionMatches = (selection, selectorTest) => {
                     matches: matches.first(),
                 };
             }
+            return undefined;
         }
         case 'concatinate':
         case 'multiGrouped':
         case 'multiArray': {
             const matches = selectorTest(selection.selector);
-            if (!matches) {
+            if (!matches || matches.length < 1) {
                 return undefined;
             }
             return {
@@ -67800,7 +67927,7 @@ const select = (opts, root) => {
     const $wrapper = $('<div></div>');
     matches.each((_, element) => {
         // TODO: Cheerio doesn't list cheerio.Element as an appendable type
-        $wrapper.append($(element));
+        $wrapper.append($(element).clone());
     });
     let $content = $wrapper;
     $content = transformAndClean($, $content, opts.url, extractionOpts);
@@ -67823,7 +67950,6 @@ const select = (opts, root) => {
                 case 'exactlyOne':
                     return (_a = content.html()) !== null && _a !== void 0 ? _a : undefined;
                 case 'first':
-                    return $.html(content.children().first());
                 case 'multiGrouped':
                     return $.html(content);
                 case 'multiArray':
@@ -67841,13 +67967,12 @@ const select = (opts, root) => {
     // Process for string output
     if (typeof selection.selector !== 'string' &&
         selection.selector.type === 'matchAttr') {
-        const attr = selection.selector.attr;
+        const { attr, transform } = selection.selector;
         // Return attr results
         $content = $content.children().map((_, el) => {
             var _a, _b;
             const item = attr ? (_b = (_a = $(el).attr(attr)) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : '' : $(el).text().trim();
-            // TODO: Readd transform
-            return item;
+            return transform ? transform(item) : item;
         });
     }
     else {
@@ -67917,7 +68042,7 @@ const selectNestedComments = (opts) => {
         return undefined;
     }
     const { selectors } = extractionOpts.topLevel;
-    const $ = cheerio.load(html);
+    const $ = loadCheerio(html);
     const matchedSelection = chooseSelection($, migrateSelections(selectors));
     if (!matchedSelection) {
         return undefined;
@@ -67937,13 +68062,15 @@ const selectNestedComments = (opts) => {
         }
         const author = selectConcatinating(Object.assign(Object.assign({}, opts), { 
             // TODO: Add proper type for cleaning
-            type: 'comment', extractionOpts: extractionOpts.author }), $node);
+            type: 'content', extractionOpts: extractionOpts.author }), $node);
         const score = selectConcatinating(Object.assign(Object.assign({}, opts), { 
             // TODO: Add proper type for cleaning
-            type: 'comment', extractionOpts: extractionOpts.score }), $node);
+            type: 'content', extractionOpts: extractionOpts.score }), $node);
+        const date = selectConcatinating(Object.assign(Object.assign({}, opts), { type: 'date_published', extractionOpts: extractionOpts.date }), $node);
         const comment = {
             author: selectionResultString(author),
             score: selectionResultString(score),
+            date: selectionResultString(date),
             text: (_b = selectionResultString(text)) !== null && _b !== void 0 ? _b : '',
         };
         const insertTransformer = (_c = extractionOpts.childLevel) === null || _c === void 0 ? void 0 : _c.insertTransform;
@@ -69943,7 +70070,7 @@ const Resource = {
     encodeDoc({ content, contentType, }) {
         const encoding = getEncoding(contentType);
         let decodedContent = lib$1.exports.decode(content, encoding);
-        let $ = cheerio.load(decodedContent);
+        let $ = loadCheerio(decodedContent);
         // after first cheerio.load, check to see if encoding matches
         const contentTypeSelector = cheerio.browser
             ? 'meta[http-equiv=content-type]'
@@ -69954,7 +70081,7 @@ const Resource = {
         // if encodings in the header/body dont match, use the one in the body
         if (metaContentType && properEncoding !== encoding) {
             decodedContent = lib$1.exports.decode(content, properEncoding);
-            $ = cheerio.load(decodedContent);
+            $ = loadCheerio(decodedContent);
         }
         return $;
     },
