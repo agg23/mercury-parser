@@ -53,6 +53,7 @@ describe('migration', () => {
             type: 'matchAttr',
             attr: 'title',
             selector: '.foo',
+            transform: undefined,
           },
         },
       ]);
@@ -68,6 +69,25 @@ describe('migration', () => {
             type: 'matchAttr',
             attr: 'title',
             selector: '.foo',
+            transform: undefined,
+          },
+        },
+      ]);
+    });
+
+    it('attr + transform', () => {
+      const func = (input: string) => `${input}foo`;
+
+      const selection = migrateSelections([['.foo', 'title', func]]);
+
+      assert.deepStrictEqual<Selection[]>(selection, [
+        {
+          type: 'exactlyOne',
+          selector: {
+            type: 'matchAttr',
+            attr: 'title',
+            selector: '.foo',
+            transform: func,
           },
         },
       ]);
@@ -142,6 +162,32 @@ describe('select(opts)', () => {
 
     const result = select(opts) as SelectionSuccessResult;
     assert.equal(result.content, '2016-09-07T09:07:59.000Z');
+  });
+
+  it("returns a node's transformed attr with an attr + transform selector", () => {
+    const html = `
+      <div>
+        <time datetime="2016-09-07T05:07:59-04:00">
+          September 7, 2016
+        </time>
+      </div>
+    `;
+    const $ = cheerio.load(html);
+    const opts = {
+      // Different type to prevent trimming
+      type: 'title' as const,
+      $,
+      extractionOpts: {
+        selectors: [
+          ['time', 'datetime', (value: string) => `${value} transformed`],
+        ] as [[string, string, (value: string) => string]],
+      },
+      html,
+      url: '',
+    };
+
+    const result = select(opts) as SelectionSuccessResult;
+    assert.equal(result.content, '2016-09-07T05:07:59-04:00 transformed');
   });
 
   it("returns a node's html when it is a content selector", () => {

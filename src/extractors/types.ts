@@ -243,6 +243,7 @@ export interface SelectorMatchAttr {
   type: 'matchAttr';
   selector: string;
   attr: string;
+  transform?: (value: string) => string;
 }
 
 export type Selector = string | SelectorMatchAll | SelectorMatchAttr;

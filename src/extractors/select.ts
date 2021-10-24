@@ -305,13 +305,12 @@ export const select = (
     typeof selection.selector !== 'string' &&
     selection.selector.type === 'matchAttr'
   ) {
-    const attr = selection.selector.attr;
+    const { attr, transform } = selection.selector;
 
     // Return attr results
     $content = $content.children().map((_, el) => {
       const item = attr ? $(el).attr(attr)?.trim() ?? '' : $(el).text().trim();
-      // TODO: Readd transform
-      return item;
+      return transform ? transform(item) : item;
     });
   } else {
     $content = $content.children().map((_, el) => $(el).text().trim());

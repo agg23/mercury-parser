@@ -38,8 +38,8 @@ export const migrateSelections = (
             selectors: selection as string[],
           },
         };
-      } else if (selection.length < 3) {
-        const [selector, attr] = selection;
+      } else {
+        const [selector, attr, transform] = selection;
 
         if (attr) {
           return {
@@ -48,6 +48,8 @@ export const migrateSelections = (
               type: 'matchAttr',
               selector,
               attr,
+              transform:
+                typeof transform === 'function' ? transform : undefined,
             },
           };
         } else {
@@ -56,11 +58,6 @@ export const migrateSelections = (
             selector,
           };
         }
-      } else {
-        // const [selector, attr, transform] = selection;
-        // eslint-disable-next-line no-console
-        console.error(`Unmigrated transformed selection`, selection);
-        throw new Error('Unmigrated transformed selection');
       }
     } else {
       return selection;
