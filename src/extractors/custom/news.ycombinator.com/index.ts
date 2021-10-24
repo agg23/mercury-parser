@@ -1,4 +1,4 @@
-import { Comment } from 'extractors/types';
+import { Comment, CustomExtractor } from 'extractors/types';
 
 const findCommentParent = (comments: Comment[], indentLevel: number) => {
   const stack: Array<{ comment: Comment; depth: number }> = comments.map(
@@ -22,31 +22,46 @@ const findCommentParent = (comments: Comment[], indentLevel: number) => {
   return undefined;
 };
 
-export const NewsYcombinatorComExtractor = {
+export const NewsYcombinatorComExtractor: CustomExtractor = {
   domain: 'news.ycombinator.com',
 
   title: {
-    selectors: [['#pagespace', 'title']],
+    selectors: [
+      {
+        type: 'exactlyOne',
+        selector: {
+          type: 'matchAttr',
+          selector: '#pagespace',
+          attr: 'title',
+        },
+      },
+    ],
   },
 
   author: {
-    selectors: ['.fatitem .hnuser'],
+    selectors: [{ type: 'exactlyOne', selector: '.fatitem .hnuser' }],
   },
 
   date_published: {
-    selectors: [['.fatitem .age', 'title']],
-  },
-
-  dek: {
-    selectors: [],
-  },
-
-  lead_image_url: {
-    selectors: [],
+    selectors: [
+      {
+        type: 'exactlyOne',
+        selector: {
+          type: 'matchAttr',
+          selector: '.fatitem .age',
+          attr: 'title',
+        },
+      },
+    ],
   },
 
   content: {
-    selectors: [['.fatitem tr:nth-of-type(4) td:nth-of-type(2)']],
+    selectors: [
+      {
+        type: 'exactlyOne',
+        selector: '.fatitem tr:nth-of-type(4) td:nth-of-type(2)',
+      },
+    ],
 
     // Is there anything in the content you selected that needs transformed
     // before it's consumable content? E.g., unusual lazy loaded images
@@ -60,10 +75,14 @@ export const NewsYcombinatorComExtractor = {
 
   comment: {
     topLevel: {
-      selectors: [['.comment-tree .comtr tr']],
+      selectors: [
+        {
+          type: 'multiArray',
+          selector: '.comment-tree .comtr tr',
+        },
+      ],
     },
     childLevel: {
-      // selectors: [['.ind', 'indent']],
       insertTransform: (
         $: cheerio.Root,
         node: cheerio.Element,
@@ -99,13 +118,32 @@ export const NewsYcombinatorComExtractor = {
       },
     },
     author: {
-      selectors: [['.hnuser']],
+      selectors: [
+        {
+          type: 'multiGrouped',
+          selector: '.hnuser',
+        },
+      ],
     },
     date: {
-      selectors: [['.age', 'title']],
+      selectors: [
+        {
+          type: 'first',
+          selector: {
+            type: 'matchAttr',
+            selector: '.age',
+            attr: 'title',
+          },
+        },
+      ],
     },
     text: {
-      selectors: [['.comment .commtext']],
+      selectors: [
+        {
+          type: 'multiGrouped',
+          selector: '.comment .commtext',
+        },
+      ],
       clean: ['.reply'],
     },
   },

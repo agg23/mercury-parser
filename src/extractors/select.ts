@@ -283,7 +283,6 @@ export const select = (
         case 'exactlyOne':
           return content.html() ?? undefined;
         case 'first':
-          return $.html(content.children().first());
         case 'multiGrouped':
           return $.html(content);
         case 'multiArray':

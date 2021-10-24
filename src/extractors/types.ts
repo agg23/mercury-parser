@@ -105,6 +105,7 @@ export interface CommentExtractorOptions {
   childLevel?: ChildLevelCommentExtractorOptions;
   author: InnerExtractorOptions;
   score?: InnerExtractorOptions;
+  date?: InnerExtractorOptions;
   text: InnerExtractorOptions;
 }
 
@@ -171,6 +172,7 @@ export interface Extend {
 export interface Comment {
   author?: string;
   score?: string;
+  date?: string;
   text: string;
   children?: Comment[];
 }

@@ -59,6 +59,8 @@ describe('Hacker News Extractor', () => {
         '<a href="https://news.ycombinator.com/user?id=mouzogu" class="hnuser">mouzogu</a>'
       );
 
+      assert.equal(firstComment.date, '2021-10-12T19:49:26.000Z');
+
       const $ = cheerio.load(`<div>${firstComment.text}</div>`);
       const first11 = excerptDomContent($, 11);
       assert.equal(
@@ -66,14 +68,24 @@ describe('Hacker News Extractor', () => {
         'I was thinking the same scrolling HN, then saw your post.'
       );
 
+      assert.equal(
+        firstComment.text,
+        `<span class="commtext c00">I was thinking the same scrolling HN, then saw your post.<p>After 15 years I'm no longer interested. I don't care about the web, css, javascript, react, testing....it's just an increasingly tedious and difficult headache to me.</p><p>I have a creative urge, and a problem solving urge, but i feel maybe it can be better expressed through another medium. I just wish I had some way to unchain myself from this 9-6 5 days a week soul-less grind.</p><p>Even when I did enjoy my job before, the increasingly complexity, the amount of tedious plumbing, spending hours fixing obscure npm bugs on a tool I built only 3 months ago (and worked perfectly). I just hate it all.</p><p>To answer your question, i haven't gotten it back and don't think i ever will.</p></span>`
+      );
+
       assert.equal(firstComment.children.length, 6);
       assert.equal(
         firstComment.children[0].author,
         '<a href="https://news.ycombinator.com/user?id=ChicagoBoy11" class="hnuser">ChicagoBoy11</a>'
       );
+      assert.equal(firstComment.children[0].date, '2021-10-12T19:56:15.000Z');
       assert.equal(
         firstComment.children[0].children[0].author,
         '<a href="https://news.ycombinator.com/user?id=billylo" class="hnuser">billylo</a>'
+      );
+      assert.equal(
+        firstComment.children[0].children[0].date,
+        '2021-10-12T20:09:42.000Z'
       );
     });
 

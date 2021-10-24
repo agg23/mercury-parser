@@ -85,9 +85,19 @@ const selectNestedComments = (
       $node
     );
 
+    const date = selectConcatinating(
+      {
+        ...opts,
+        type: 'date_published',
+        extractionOpts: extractionOpts.date,
+      },
+      $node
+    );
+
     const comment: Comment = {
       author: selectionResultString(author),
       score: selectionResultString(score),
+      date: selectionResultString(date),
       text: selectionResultString(text) ?? '',
     };
 

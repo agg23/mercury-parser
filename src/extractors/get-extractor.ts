@@ -5,8 +5,8 @@ import { CustomExtractor } from './types';
 
 export function getExtractor(
   url: string,
-  parsedUrl: URL,
-  $: cheerio.Root
+  parsedUrl?: URL,
+  $?: cheerio.Root
 ): CustomExtractor | undefined {
   parsedUrl = parsedUrl || new URL(url);
   const { hostname } = parsedUrl;
@@ -17,6 +17,7 @@ export function getExtractor(
     apiExtractors[baseDomain] ||
     (hostname && Extractors[hostname]) ||
     Extractors[baseDomain] ||
-    detectByHtml($)
+    ($ && detectByHtml($)) ||
+    undefined
   );
 }
