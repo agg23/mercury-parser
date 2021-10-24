@@ -69,7 +69,7 @@ const selectNestedComments = (
       {
         ...opts,
         // TODO: Add proper type for cleaning
-        type: 'comment',
+        type: 'content',
         extractionOpts: extractionOpts.author,
       },
       $node
@@ -79,7 +79,7 @@ const selectNestedComments = (
       {
         ...opts,
         // TODO: Add proper type for cleaning
-        type: 'comment',
+        type: 'content',
         extractionOpts: extractionOpts.score,
       },
       $node

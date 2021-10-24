@@ -134,7 +134,7 @@ describe('WwwRedditComExtractor', () => {
 
       assert.equal(
         firstComment.author,
-        '<a href="https://old.reddit.com/user/LorenzoPg" class="author may-blank id-t2_narnh">LorenzoPg</a>'
+        '<a href="https://old.reddit.com/user/LorenzoPg">LorenzoPg</a>'
       );
       assert.equal(firstComment.score, '11.0k points');
       assert.equal(firstComment.date, '2019-03-03T21:46:23.000Z');
@@ -147,20 +147,20 @@ describe('WwwRedditComExtractor', () => {
 
       assert.equal(
         firstChild.author,
-        '<a href="https://old.reddit.com/user/emptyzombiekilla" class="author may-blank id-t2_ouaai">emptyzombiekilla</a>'
+        '<a href="https://old.reddit.com/user/emptyzombiekilla">emptyzombiekilla</a>'
       );
       assert.equal(firstChild.score, '5729 points');
       assert.equal(firstChild.date, '2019-03-03T21:52:16.000Z');
       assert.equal(
         firstChild.text,
-        `<div class="md"><p>Is there a cheaper alternative?</p><p>Edit: While I have your attention check to make sure you're on WiFi.</p></div>`
+        `<div><p>Is there a cheaper alternative?</p><p>Edit: While I have your attention check to make sure you're on WiFi.</p></div>`
       );
 
       const secondComment = comments![1];
 
       assert.equal(
         secondComment.author,
-        '<a href="https://old.reddit.com/user/Infinity_LTFS" class="author may-blank id-t2_sn4t76i">Infinity_LTFS</a>'
+        '<a href="https://old.reddit.com/user/Infinity_LTFS">Infinity_LTFS</a>'
       );
       assert.equal(secondComment.score, '940 points');
       assert.equal(secondComment.date, '2019-03-03T22:05:36.000Z');

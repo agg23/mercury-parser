@@ -87,7 +87,11 @@ describe('WwwCnnComExtractor', () => {
         first13,
         "(CNN) Winning the presidency didn't change Donald Trump -- and it's increasingly clear"
       );
-      assert.equal($('.media__video--thumbnail').length, 1);
+      assert.equal($('img').length, 1);
+      assert.equal(
+        $('img').attr('src'),
+        'http://i2.cdn.cnn.com/cnnnext/dam/assets/160508133659-trump-0507-exlarge-169.jpg'
+      );
     });
   });
 });

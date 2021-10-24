@@ -40,8 +40,6 @@ export const WHITELIST_ATTRS = [
   'sizes',
   'type',
   'href',
-  'class',
-  'id',
   'alt',
   'xlink:href',
   'width',

@@ -194,7 +194,7 @@ describe('select(opts)', () => {
     const html = `
       <div><div class="content-is-here"><p>Wow what a piece of content</p></div></div>
     `;
-    const output = `<p>Wow what a piece of content</p>`;
+    const output = `Wow what a piece of content`;
     const $ = cheerio.load(html);
     const opts = {
       type: 'content' as const,
@@ -228,8 +228,12 @@ describe('select(opts)', () => {
     };
 
     const result = select(opts) as SelectionSuccessResult;
-    assert.equal($(result.content).find('img.lead-image').length, 1);
-    assert.equal($(result.content).find('.content-is-here').length, 1);
+    assert.equal($(result.content).find('img').length, 1);
+    assert.equal($(result.content).find('div > p').length, 1);
+    assert.equal(
+      $(result.content).find('div > p').text(),
+      'Wow what a piece of content'
+    );
   });
 
   it('skips multi-match if not all selectors are present', () => {

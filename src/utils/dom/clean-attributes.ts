@@ -9,23 +9,21 @@ function removeAllButWhitelist($article: cheerio.Cheerio, $: cheerio.Root) {
 
     setAttrs(
       node,
-      Reflect.ownKeys(attrs).reduce(
-        (acc, attr) => {
-          const stringAttr = String(attr);
+      Reflect.ownKeys(attrs).reduce((acc, attr) => {
+        const stringAttr = String(attr);
 
-          if (WHITELIST_ATTRS_RE.test(stringAttr)) {
-            return { ...acc, [attr]: attrs[stringAttr] };
-          }
+        if (WHITELIST_ATTRS_RE.test(stringAttr)) {
+          return { ...acc, [attr]: attrs[stringAttr] };
+        }
 
-          return acc;
-        },
-        {} as Record<string, string>
-      )
+        return acc;
+      }, {} as Record<string, string>)
     );
   });
 
   // Remove the mercury-parser-keep class from result
   $(`.${KEEP_CLASS}`, $article).removeClass(KEEP_CLASS);
+  $article.removeAttr('score');
 
   return $article;
 }

@@ -102,7 +102,7 @@ describe('WwwThevergeComExtractor', () => {
         first13,
         'Last year we won the open internet back , but the new regulations'
       );
-      assert.equal($('.e-image--hero').length, 1);
+      assert.equal($('figure').length, 2);
     });
   });
   it('returns the content from a feature', async () => {
